@@ -1,7 +1,7 @@
 """
 Description:
     -   Creates WeBots readable terrain elevation map of .wbo file format. This approach uses
-        Gaussian distributions with noise 
+        Gaussian distributions with noise.
 
 By Oliver Heilmann
 """
@@ -58,7 +58,7 @@ name "ELE_MOD"
                 YDIMENSION,
                 )
 
-    with open('elevationmap_gaussian.wbo', 'w') as f:
+    with open('maps/elevationmap_gaussian.wbo', 'w') as f:
         f.write( formatted )
 
 

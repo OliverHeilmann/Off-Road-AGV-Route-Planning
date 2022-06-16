@@ -1,6 +1,14 @@
-from priorityqueue import PriorityQueue
+"""
+Description:
+    -   ...
+
+By Oliver Heilmann
+Modified from ...
+"""
+
 import random
-import mazegen
+import pickle
+from priorityqueue import PriorityQueue
 
 class Node:
     def __init__(self, state, parent=None):
@@ -18,6 +26,7 @@ class Node:
 
     def __str__(self):
         return f"Node space {self.state}"
+
 
 class Frontier:
     # Note the heuristic function is passed in as a parameter
@@ -50,13 +59,13 @@ class Frontier:
         return self.queue.length()
 
 
-def valid_space(maze, space):
+def valid_space(maze, space, maxslope):
     return 0 <= space[0] < len(maze) \
            and 0 <= space[1] < len(maze[0]) \
-           and maze[space[0]][space[1]] == '.'
+           and maze[space[0]][space[1]] < maxslope
 
 
-def greedy_search(maze, start=(0, 0), goal=None):
+def greedy_search(maze, maxslope, start=(0, 0), goal=None):
     if goal is None:
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
@@ -78,11 +87,14 @@ def greedy_search(maze, start=(0, 0), goal=None):
         right = (current_state[0], current_state[1] + 1)
         left = (current_state[0], current_state[1] - 1)
         down = (current_state[0] + 1, current_state[1])
+        downright = (current_state[0] - 1, current_state[1] + 1)
+        downleft = (current_state[0] - 1, current_state[1] - 1)
         up = (current_state[0] - 1, current_state[1])
+        upright = (current_state[0] + 1, current_state[1] + 1)
+        upleft = (current_state[0] + 1, current_state[1] - 1)
         
-        for space in [right, left, down, up]:
-            if valid_space(maze, space) \
-               and space not in explored:
+        for space in [right, left, down, downright, downleft, up, upright, upleft]:
+            if valid_space(maze, space, maxslope) and space not in explored:
                 node = Node(space, parent=current_node)
                 frontier.push(node)
 
@@ -93,30 +105,32 @@ def greedy_search(maze, start=(0, 0), goal=None):
     
     return current_node, number_explored
 
-# here is the "main" code, we generate a new maze then try the search
-# try changing the random seed to try different mazes (not all are solvable)
-height = 10
-width = 20
 
-random.seed(0)
-maze = mazegen.mazegen(height, width)
-final_node, number_explored = greedy_search(maze)
+def get_solution( picklepath : str, maxslope=100 ):
 
-if final_node is None:
-    print("No path exists!\n")
-    mazegen.print_maze(maze)
-else:
-    node = final_node
-    steps = 0
-    while node.parent is not None:
+    # open map 2D array pickle file
+    with open( picklepath, "rb" ) as f:
+            maze = pickle.load(f)
+
+    # perform greedy heuristic search
+    final_node, number_explored = greedy_search(maze, maxslope)
+
+    solution = []
+    if final_node is None:
+        print("No path exists!\n")
+    else:
+        node = final_node
+        steps = 0
+        while node.parent is not None:
+            state = node.state
+            solution.append( state )
+            steps += 1
+            node = node.parent
+
         state = node.state
-        maze[state[0]][state[1]] = 'X'
-        steps += 1
-        node = node.parent
+        solution.append( state )
+        
+        print(f"Total steps on path: {steps}")
+        print(f"Total states explored: {number_explored}")
 
-    state = node.state
-    maze[state[0]][state[1]] = 'X'
-    mazegen.print_maze(maze)
-    
-    print(f"Total steps on path: {steps}")
-    print(f"Total states explored: {number_explored}")
+    return solution
