@@ -18,8 +18,15 @@ import pickle
 import sys     
 sys.path.append('/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/search')   
 from greedysearch import get_solution
+from scipy import stats
 
 ############################## SETUP ###################################
+# VEHICLES
+MAX_SLOPE_ANGLE = .29   # Maximum permissible slope angle for vehicle as ratio of Rise/Run
+VEHICLE_LENGTH = 2.964  # Vehicle length in meters
+RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
+
+# MAPS
 XDIMENSION = 100 # Max number of nodes in x dir
 YDIMENSION = 100 # Max number of nodes in y dir
 
@@ -37,15 +44,11 @@ GRID_SIZE=1
 H=15
 
 #POINT DATASET (FOR CREATING PEAKS)
-
 x=random.sample(range(0, XDIMENSION), SAMPLES)
 x.extend( [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50] )  # Add more data points to emphasize areas to elevate further
 
 y=random.sample(range(0, YDIMENSION), SAMPLES)
 y.extend( [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50] )  # Add more data points to emphasize areas to elevate further
-
-MAX_SLOPE_ANGLE = .2   # Maximum permissible slope angle for vehicle as ratio of Rise/Run
-
 #######################################################################
 
 
@@ -103,7 +106,40 @@ def slope_map( elev : np.array ):
                         8 * YSPACING
 
             slope[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
-    return slope[1:-1, 1:-1]    # drop borders as the slopes are impacted NaN neighbours
+    return slope#[1:-1, 1:-1]    # drop borders as the slopes are impacted NaN neighbours
+
+
+#CREATE A SET OF WAYPOINTS FOR VEHICLE TO DRIVE TOWARD
+def waypoints( x_arr : np.array, y_arr : np.array):
+    x_wpts = [ x_arr[0] ]
+    y_wpts = [ y_arr[0] ]
+
+    x_prev = x_arr[0]
+    y_prev = y_arr[0]
+
+    xs, ys = [], []
+    for x_curr, y_curr in zip(x_arr, y_arr):
+        xs.append( x_curr )
+        ys.append( y_curr )
+
+        # get R value for determining waypoints
+        if not all(x==xs[0] for x in xs):
+            slope, intercept, r_value, p_value, std_err = stats.linregress(xs, ys)
+            rSq = r_value**2
+        else: rSq = 1.0
+
+        # if the new coord drops r2 value below threshold, add the previous coord to
+        # the list of waypoints and reset the array to only include current (x,y)
+        if  0 < rSq < RSQ_THRESHOLD:
+            x_wpts.append( x_prev )
+            y_wpts.append( y_prev )
+            xs, ys = [x_prev, x_curr], [y_prev, y_curr]
+
+        # update previous values to equal current before new loop
+        x_prev, y_prev = x_curr, y_curr
+    x_wpts.append(x_curr)
+    y_wpts.append(y_curr)
+    return x_wpts, y_wpts
 
 
 #MAIN PROCESSING
@@ -145,12 +181,22 @@ if __name__ == '__main__':
 
     # Save slope 2D array as pickle file for use in path planning algorithm
     with open('maps/elevationmap_2darray.pickle', "wb") as f:
-        pickle.dump(slope, f)
+        pickle.dump(slope[1:-1, 1:-1], f)   # drop borders of slope map as gradients are inaccurate
     solutionArr = get_solution('maps/elevationmap_2darray.pickle', maxslope=MAX_SLOPE_ANGLE)
 
     # unpack solution for plotting
-    ys = [coord[0] for coord in solutionArr]
-    xs = [coord[1] for coord in solutionArr]
+    ys = [coord[0]+1 for coord in solutionArr[::-1]]
+    xs = [coord[1]+1 for coord in solutionArr[::-1]]
+
+    # Make set of waypoints for vehicle based on solution
+    wpts_x, wpts_y = waypoints( x_arr = xs, y_arr = ys)
+
+    # Save waypoints as text file usable in WeBots
+    wpts_string = ",".join( ['{' + str(el[0] - (XDIMENSION/2)) + ','    \
+                                 + str(el[1] - (YDIMENSION/2)) + '}'    \
+                                    for el in zip(wpts_x,wpts_y)] )
+    with open('maps/waypoints.txt', "w") as f:
+        f.write( wpts_string )
 
     #ELEVATION HEATMAP OUTPUT
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
@@ -162,5 +208,6 @@ if __name__ == '__main__':
     #SLOPE HEATMAP OUTPUT  
     ax2.set(title="Slope Heatmap")
     ax2.plot(xs, ys,'r-')
-    fig.colorbar( ax2.pcolormesh(x_mesh[1:-1, 1:-1]-1, y_mesh[1:-1, 1:-1]-1, slope), ax=ax2 )
+    ax2.plot(wpts_x, wpts_y,'bo')
+    fig.colorbar( ax2.pcolormesh(x_mesh, y_mesh, slope), ax=ax2 )
     plt.show()
