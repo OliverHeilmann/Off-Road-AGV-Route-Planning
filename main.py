@@ -6,9 +6,15 @@ Description:
         to higher elevations.
     -   Using the output terrain elevation map, a slope map is generated using the method shown
         in the imgs folder (https://www.mdpi.com/2220-9964/10/11/785).
+    -   Using the aforementioned slope map, a path planning algorithm is used to plot a route
+        between two points, while avoiding regions of non-permissable slope angles (a param
+        defined in the setup section).
+    -   To reduce the number of waypoints required, an R2 approach is then used to select a
+        minimum number of waypoints required to reach the target location. The results are
+        saved into a text file thereafter.
+    -   Results are plotted as two heat maps using Matplotlib
 
 By Oliver Heilmann
-Modified from https://www.geodose.com/2018/01/creating-heatmap-in-python-from-scratch.html
 """
 import matplotlib.pyplot as plt
 import numpy as np
