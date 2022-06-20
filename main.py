@@ -29,6 +29,7 @@ from scipy import stats
 #### WEBOTS VEHICLE PROPERTIES
 MAX_SLOPE_ANGLE = 0.29      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
+VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
@@ -184,24 +185,39 @@ def get_waypoints( route : np.ndarray ):
     wpts.append( (x_curr, y_curr) )
     return wpts
 
-def wbo_waypoints( points : np.ndarray ):
-    """Save waypoints as text file usable in WeBots."""
+def wbo_vehicle_config( heightArr : np.ndarray, points : np.ndarray ):
+    """Save key Webots startup information in text file for C code."""
 
-    # start file with number of waypoints
-    wpts_string = f'{str(len(points))}:'
+    # calculate translation values
+    tx = str(points[0][0] - ((XDIMENSION*XSPACING)/2) + XSPACING)
+    ty = str(points[0][1] - ((YDIMENSION*YSPACING)/2) + YSPACING)
+    tz = str(heightArr[points[0][0]][points[0][1]] + VEHICLE_HEIGHT/2)
 
-    # put all waypoints into string
-    wpts_string += ",".join( ['{{{},{}}}'.format(   str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
+    # put all waypoints into string and adjust for elevation map offset in WeBots
+    wpts_string = ",".join( ['{{{},{}}}'.format(    str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
                                                     str(el[1] - ((YDIMENSION*YSPACING)/2) + YSPACING))
                                                     for el in points] )
 
+    # structure of .wbo file
+    formatted =  """Vehicle Config File
+Vehicle {{
+    translation {} {} {}
+    rotation {} {} {} {}
+    count {}
+    waypoints {}
+}}""".format(   tx, ty, tz,
+                0, 0, -1, -0.85,
+                str(len(points)),
+                wpts_string,
+            )
     # Save waypoints as text file usable in WeBots
     try:
-        with open('maps/elevationmap_waypoints.txt', "w") as f:
-            f.write( wpts_string )
+        with open('maps/elevationmap_vehicle_config.txt', "w") as f:
+            f.write( formatted )
             f.close()
     except:
-        raise ValueError('"maps/elevationmap_waypoints.txt" did not save!')
+        raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
+
 
 # Main processing
 if __name__ == '__main__':
@@ -233,8 +249,8 @@ if __name__ == '__main__':
         # Returns as [ (x1,y1), (x2,y2) ... ]
         waypoints = get_waypoints( route = solutionRoute )
 
-        # Save waypoints in WeBots readable textfile format
-        wbo_waypoints( points = waypoints )
+        # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
+        wbo_vehicle_config( heightArr = intensity2DArr, points = waypoints )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version
