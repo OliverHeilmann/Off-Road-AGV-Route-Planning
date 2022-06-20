@@ -6,8 +6,7 @@ By Oliver Heilmann
 Modified from ...
 """
 
-import random
-import pickle
+import numpy as np
 from priorityqueue import PriorityQueue
 
 class Node:
@@ -106,14 +105,9 @@ def greedy_search(maze, maxslope, start=(0, 0), goal=None):
     return current_node, number_explored
 
 
-def get_solution( picklepath : str, maxslope=100 ):
-
-    # open map 2D array pickle file
-    with open( picklepath, "rb" ) as f:
-            maze = pickle.load(f)
-
-    # perform greedy heuristic search
-    final_node, number_explored = greedy_search(maze, maxslope)
+def greedyRoute( slopemap : np.array, maxslope=100, gridsize=(1,1) ):
+    """Perform Greedy Search Algorithm on slopemap and return route as list."""
+    final_node, number_explored = greedy_search(slopemap, maxslope)
 
     solution = []
     if final_node is None:
@@ -122,15 +116,16 @@ def get_solution( picklepath : str, maxslope=100 ):
         node = final_node
         steps = 0
         while node.parent is not None:
+            # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
             state = node.state
-            solution.append( state )
+            solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
             steps += 1
             node = node.parent
 
+        # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
         state = node.state
-        solution.append( state )
+        solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
         
         print(f"Total steps on path: {steps}")
         print(f"Total states explored: {number_explored}")
-
-    return solution
+    return solution[::-1]   # reverse to start in correct order
