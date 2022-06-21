@@ -1,0 +1,11 @@
+Webots Proto Cache File version 1.5
+protoFileHash: 57b873a4832c367dd106e612eda5a4ab
+needsRobotAncestor: 1
+baseType: Robot
+slotType: 
+parameters: translation,rotation,name,controller,controllerArgs,synchronization,color,bodySlot
+tags: 
+license:  Copyright Cyberbotics Ltd. Licensed for use only with Webots.
+licenseUrl:  https://cyberbotics.com/webots_assets_license
+documentationUrl: https://www.cyberbotics.com/doc/guide/moose
+info: The\sClearpath\sMoose\srobot\sis\sa\slarge\sall-terrain\sunmanned\sground\svehicle.\nIt\scan\shandle\stough\senvironments\swith\sits\srugged\sbuild,\slow\sground\spressure,\sand\s8x8\straction\stires,\swhich\sallow\seffortless\smobility\sthrough\ssoft\ssoils,\svegetation,\sthick\smuds,\sand\ssteep\sgrades.\nWith\sa\slarge\spayload\smounting\sarea\sand\saccessible\spower\sand\scommunication\sports,\sMoose\scan\sbe\seasily\scustomized\swith\ssensors,\smanipulators\sand\sother\spayloads\sto\saccommodate\sa\swide\svariety\sof\srobotics\sapplications\sin\smining,\sagriculture,\sconstruction\sand\senvironmental\smonitoring.
