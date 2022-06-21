@@ -24,7 +24,7 @@
 #include <string.h>
 
 #define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
-#define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Size of the history.
+#define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 
 typedef struct _Vector {
   double x;
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 
   // Open text file with vehicle configs, update the translation and rotation fields
   double new_translation[3] = {0, 0, 0};
-  int target_points_size = 10;
+  int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
   Vector coordinates[target_points_size];
   Vector *new_coords = vehicle_config( new_translation, &target_points_size, coordinates );
 
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 
   // Loop through waypoint coordinates and draw lines between them
   for (int i = 0; i < target_points_size; i++) {
-    
+
     // extract Vector struct params and reformat to Webots format
     double target_translation[3] =  {  new_coords[i].x, new_coords[i].y, new_coords[i].z };
 
