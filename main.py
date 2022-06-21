@@ -27,7 +27,7 @@ from scipy import stats
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.44      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
+MAX_SLOPE_ANGLE = 0.29      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
@@ -51,7 +51,7 @@ x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
 ADD_NOISE = True    # include additional noise?
-SAMPLES = 90        # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 40        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -194,8 +194,9 @@ def wbo_vehicle_config( heightArr : np.ndarray, points : np.ndarray ):
     tz = str(heightArr[points[0][0]][points[0][1]] + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
-    wpts_string = ",".join( ['{{{},{}}}'.format(    str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
-                                                    str(el[1] - ((YDIMENSION*YSPACING)/2) + YSPACING))
+    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
+                                                    str(el[1] - ((YDIMENSION*YSPACING)/2) + YSPACING),
+                                                    str(round(heightArr[el[1]][el[0]] + VEHICLE_HEIGHT/2,4)))
                                                     for el in points] )
 
     # structure of .wbo file

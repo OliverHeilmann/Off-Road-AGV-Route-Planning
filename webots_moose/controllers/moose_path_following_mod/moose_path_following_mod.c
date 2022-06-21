@@ -193,7 +193,7 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
 }
 
 // Open the vehicle configuration file and extract the translation and rotation values
-static Vector * vehicle_config ( int *target_point_size, Vector test_targets[] ) {
+static Vector* vehicle_config ( int *target_point_size, Vector test_targets[] ) {
   // create vector to append waypoints to
   char * line = NULL;
   size_t len = 0;
@@ -212,7 +212,7 @@ static Vector * vehicle_config ( int *target_point_size, Vector test_targets[] )
     while ( ptr != NULL ){
       // row for getting the length of waypoints
       if ( row == 4  && col == 1){
-        *target_point_size =  atof(ptr);
+        *target_point_size =  atoi(ptr);
         memset( test_targets, 0, *target_point_size*sizeof(int) );
       }
       // row for getting the waypoints
@@ -222,15 +222,19 @@ static Vector * vehicle_config ( int *target_point_size, Vector test_targets[] )
         char * token = strtok(ptr, "{},");
         while( token != NULL ) {
           // if even, set value to u
-          if (count % 2 == 0){
+          if (count == 0){
             u = atof(token);
           }
           // if odd then set value to v, then push to targets
-          else {
+          else if (count == 1) {
             v = atof(token);
             Vector val = {u, v};
             test_targets[step] = val;
             step++;
+          }
+          // reset counter i.e. ignore waypoint heights
+          else {
+            count = -1;
           }
           token = strtok(NULL, "{},");
           count++;
