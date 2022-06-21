@@ -180,3 +180,7 @@ Robot {
   controller "supervisor_draw_trail_mod"
   supervisor TRUE
 }
+DEF SUPER_ROUTE Robot {
+  controller "supervisor_draw_route"
+  supervisor TRUE
+}

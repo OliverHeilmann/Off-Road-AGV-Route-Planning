@@ -27,7 +27,7 @@ from scipy import stats
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.29      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
+MAX_SLOPE_ANGLE = 0.44      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
@@ -47,11 +47,11 @@ ROUGHNESS = 1   # Material Roughness
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 15    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50]  # seed y points for elevation locations
+x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
 ADD_NOISE = True    # include additional noise?
-SAMPLES = 60        # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 90        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 

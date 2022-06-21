@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <webots/display.h>
 
 #define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Size of the history.
