@@ -42,7 +42,9 @@ XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
 ZTRANSLATE = 0                                  # Offset for terrain in z dir
 
-ROUGHNESS = 1   # Material Roughness    
+USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+
+SCALE = 10  # Scale of appearance image over texture  
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 15    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -107,10 +109,12 @@ Solid {{
     translation {} {} {}
     children [
         Shape {{
-            appearance PBRAppearance {{
-                roughness {}
+            appearance SandyGround {{
+                textureTransform TextureTransform {{
+                scale {} {}
             }}
-            geometry ElevationGrid {{
+            }}
+            geometry DEF TERRAIN_MAP ElevationGrid {{
                 height [{}]
                 xDimension {}
                 xSpacing {}
@@ -120,10 +124,11 @@ Solid {{
         }}
     ]
 name "ELE_MOD"
+boundingObject USE TERRAIN_MAP
 }}  """.format( XTRANSLATE,
                 YTRANSLATE,
                 ZTRANSLATE,
-                ROUGHNESS,
+                SCALE, SCALE,
                 heights,
                 XDIMENSION,
                 XSPACING,
@@ -251,7 +256,7 @@ if __name__ == '__main__':
         waypoints = get_waypoints( route = solutionRoute )
 
         # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        wbo_vehicle_config( heightArr = intensity2DArr, points = solutionRoute )
+        wbo_vehicle_config( heightArr = intensity2DArr, points = waypoints if USE_WAYPOINTS else solutionRoute )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version
