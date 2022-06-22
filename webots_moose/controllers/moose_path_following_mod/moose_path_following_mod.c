@@ -28,6 +28,7 @@
 ////////// For Moose path following //////////
 #define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
 #define TIME_STEP 16
+#define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 // #define TARGET_POINTS_SIZE 11
 #define DISTANCE_TOLERANCE 1.5
 #define MAX_SPEED 7.0
@@ -254,7 +255,7 @@ int main(int argc, char *argv[]) {
   wb_robot_init();
 
   // setup webots vehicle params for terrain tests
-  int target_points_size = 10;
+  int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
   Vector targets[target_points_size];
   Vector *new_targets = vehicle_config( &target_points_size, targets );
 

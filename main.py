@@ -251,7 +251,7 @@ if __name__ == '__main__':
         waypoints = get_waypoints( route = solutionRoute )
 
         # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        wbo_vehicle_config( heightArr = intensity2DArr, points = waypoints )
+        wbo_vehicle_config( heightArr = intensity2DArr, points = solutionRoute )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version
