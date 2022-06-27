@@ -22,7 +22,8 @@ import math
 import random
 import sys
 sys.path.append('./search')     # add 'search' directory to path
-from greedysearch import greedyRoute
+from greedysearch import greedyRoute3D
+from astarsearch import astarRoute3D
 from scipy import stats
 
 ############################## SETUP ###################################
@@ -44,7 +45,7 @@ ZTRANSLATE = 0                                  # Offset for terrain in z dir
 
 USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
-SCALE = 10  # Scale of appearance image over texture  
+SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 15    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -52,7 +53,7 @@ H = 15    # Radius (h) defines how much affect each point has to KDE (higher H i
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True    # include additional noise?
+ADD_NOISE = False    # include additional noise?
 SAMPLES = 40        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
@@ -92,7 +93,7 @@ def intensity_map( xs : list, ys : list ):
             intensity_row.append(p_total)
         intensity_list.append(intensity_row)
     
-    # Turn intensity list into array and then set border heights to 0
+    # Turn intensity list into numpy array and then set border heights to 0
     intensityArr = np.array(intensity_list) 
     intensityArr[0,:-1] = intensityArr[:-1,-1] = intensityArr[:-1,0] = intensityArr[-1,:-1] = 0
     return (x_mesh, y_mesh), intensityArr
@@ -196,12 +197,12 @@ def wbo_vehicle_config( heightArr : np.ndarray, points : np.ndarray ):
     # calculate translation values
     tx = str(points[0][0] - ((XDIMENSION*XSPACING)/2) + XSPACING)
     ty = str(points[0][1] - ((YDIMENSION*YSPACING)/2) + YSPACING)
-    tz = str(heightArr[points[0][0]][points[0][1]] + VEHICLE_HEIGHT/2)
+    tz = str(heightArr[int(points[0][0]/XSPACING)][int(points[0][1]/YSPACING)] + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
     wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
                                                     str(el[1] - ((YDIMENSION*YSPACING)/2) + YSPACING),
-                                                    str(round(heightArr[el[1]][el[0]] + VEHICLE_HEIGHT/2,4)))
+                                                    str(round(heightArr[int(el[1]/XSPACING)][int(el[0]/YSPACING)] + VEHICLE_HEIGHT/2,4)))
                                                     for el in points] )
 
     # structure of .wbo file
@@ -224,6 +225,11 @@ Vehicle {{
     except:
         raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
 
+def get_xys( route ):
+    xs = [coord[0]+XSPACING for coord in route]
+    ys = [coord[1]+YSPACING for coord in route]
+    return xs, ys
+
 
 # Main processing
 if __name__ == '__main__':
@@ -245,25 +251,35 @@ if __name__ == '__main__':
     slope = slope_map( intensity2DArr )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
-    # Don't pass border values as their slopes are not accurate due to kerneling method
-    solutionRoute = greedyRoute( slope[1:-1, 1:-1], maxslope=MAX_SLOPE_ANGLE, gridsize=(XSPACING,YSPACING) )
+    # # Don't pass border values as their slopes are not accurate due to kerneling method
+    solutionRoute_greedy = greedyRoute3D(   intensity2DArr[1:-1, 1:-1],     # map_array of heights
+                                            slope[1:-1, 1:-1],              # array of slope angles
+                                            maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                            gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+            
+    solutionRoute_astar = astarRoute3D( intensity2DArr[1:-1, 1:-1],     # map_array of heights
+                                        slope[1:-1, 1:-1],              # array of slope angles
+                                        maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                        gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     # if a path exists then continue
-    if len(solutionRoute) > 0:
+    if len(solutionRoute_astar) > 0:
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]
-        waypoints = get_waypoints( route = solutionRoute )
+        waypoints_greedy = get_waypoints( route = solutionRoute_greedy )
+        waypoints_astar = get_waypoints( route = solutionRoute_astar )
 
         # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        wbo_vehicle_config( heightArr = intensity2DArr, points = waypoints if USE_WAYPOINTS else solutionRoute )
+        wbo_vehicle_config( heightArr = intensity2DArr, points = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version
-        x_rt = [coord[0]+XSPACING for coord in solutionRoute]
-        y_rt = [coord[1]+YSPACING for coord in solutionRoute]
-        x_wpts = [coord[0]+XSPACING for coord in waypoints]
-        y_wpts = [coord[1]+YSPACING for coord in waypoints]
+        x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
+        x_wpts_greedy, y_wpts_greedy = get_xys( waypoints_greedy )
+
+        x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
+        x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
 
         # HEADER
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
@@ -277,9 +293,17 @@ if __name__ == '__main__':
 
         # SLOPE HEATMAP OUTPUT
         ax2.set(title="Slope Heatmap")
-        ax2.plot(x_rt, y_rt,'r-')
-        ax2.plot(x_wpts, y_wpts,'bo')
+
+        # plot Greedy
+        ax2.plot(x_rt_greedy, y_rt_greedy,'g-')
+        ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+        # plot A* 
+        ax2.plot(x_rt_astar, y_rt_astar,'r-')
+        ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+
+        # plot axes and legend
         ax2.axis(xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING, ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING)
+        ax2.legend(['Greedy', 'A*'])
         fig.colorbar( ax2.pcolormesh(x_mesh, y_mesh, slope), ax=ax2 )
         plt.show()
         ###################################################
