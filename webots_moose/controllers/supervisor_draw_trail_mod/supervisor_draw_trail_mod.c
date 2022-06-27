@@ -110,6 +110,7 @@ int main(int argc, char **argv) {
   // Open text file with vehicle configs, update the translation and rotation fields
   double new_translation[3] = {-49, -49, 0.5725};
   double new_rotation[4] = {0, 0, -1, -0.85};
+  double payload_rotation[4] = {0.85, 0.35, 0.35, 1.7};
   vehicle_config( new_translation, new_rotation);
 
   // Get moose vehicle node and then move to desired coords at startup
@@ -118,6 +119,14 @@ int main(int argc, char **argv) {
   WbFieldRef rotation_field = wb_supervisor_node_get_field(moose_node, "rotation");
   wb_supervisor_field_set_sf_vec3f(translation_field, new_translation);
   wb_supervisor_field_set_sf_rotation(rotation_field, new_rotation);
+
+  // do the same thing for the payload
+  WbNodeRef payload_node = wb_supervisor_node_get_from_def("PAYLOAD");
+  translation_field = wb_supervisor_node_get_field(payload_node, "translation");
+  rotation_field = wb_supervisor_node_get_field(payload_node, "rotation");
+  new_translation[2] += 0.75;  // shift payload up above moose
+  wb_supervisor_field_set_sf_vec3f(translation_field, new_translation);
+  wb_supervisor_field_set_sf_rotation(rotation_field, payload_rotation);
   ////////////////////////////////////////////////////////////////
 
   // Get the target object node, i.e. the TARGET Transform in the E-puck turretSlot field.

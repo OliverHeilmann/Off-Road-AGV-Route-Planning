@@ -28,7 +28,7 @@ from scipy import stats
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.29      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
+MAX_SLOPE_ANGLE = 0.19      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
@@ -49,7 +49,7 @@ USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise rou
 SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 8    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
@@ -60,8 +60,8 @@ y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35
 #         165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200] # seed y points for elevation locations
 
 
-ADD_NOISE = False    # include additional noise?
-SAMPLES = 65       # Number of additional random samples used to generate heat map and terrain profile
+ADD_NOISE = True   # include additional noise?
+SAMPLES = 99       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 

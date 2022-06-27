@@ -26,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.2983624172447723 0.2988852698788648 0.9064477168735627 1.754281091350814
-  position 8.538198816692812 -88.66051951509989 60.64146584835006
+  orientation -0.22786673503935687 0.24650116604630215 0.941973421175097 1.6642835752952265
+  position 2.501130177466538 -61.14797848466503 32.93238952850455
   near 1
   follow "moose"
 }
@@ -36,7 +36,7 @@ TexturedBackground {
 TexturedBackgroundLight {
   luminosity 0.8
 }
-DEF ELEVATION_GRID Solid {
+Solid {
   translation -25 -25 -0.01
   children [
     Shape {
@@ -73,7 +73,7 @@ DEF PLANE Solid {
     Shape {
       appearance SandyGround {
         textureTransform TextureTransform {
-          rotation 0.2
+          rotation 1
           scale 200 200
         }
       }
@@ -98,7 +98,7 @@ DEF MOOSE Moose {
     }
   ]
 }
-CardboardBox {
+DEF PAYLOAD CardboardBox {
   translation -7.423119324430362 6.514719319010767 8.417623063656727
   rotation 0.904581225117662 0.336896536250381 0.261215487724455 1.589542292814968
   name "robot cardboard payload"
