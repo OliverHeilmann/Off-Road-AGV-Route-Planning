@@ -23,7 +23,7 @@
 #include <webots/display.h>
 
 #define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
-#define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Size of the history.
+#define MAXIMUM_NUMBER_OF_COORDINATES 4000  // Size of the history.
 #define REFRESH_FACTOR 20                  // Refresh the trail every REFRESH_FACTOR * WorldInfo.basicTimeStep.
 
 // Create the trail shape with the correct number of coordinates.
@@ -34,7 +34,7 @@ static void create_trail_shape() {
     wb_supervisor_node_remove(existing_trail);
 
   int i;
-  char trail_string[0x10000] = "\0";  // Initialize a big string which will contain the TRAIL node.
+  char trail_string[0x100000] = "\0";  // Initialize a big string which will contain the TRAIL node.
 
   // Create the TRAIL Shape.
   strcat(trail_string, "DEF TRAIL Shape {\n");
