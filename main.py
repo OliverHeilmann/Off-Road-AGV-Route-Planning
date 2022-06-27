@@ -34,10 +34,11 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 25    # Max number of nodes in x dir
-YDIMENSION = 25    # Max number of nodes in y dir
+XDIMENSION = 100    # Max number of nodes in x dir
+YDIMENSION = 100    # Max number of nodes in y dir
 
-XSPACING = YSPACING = 8    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
@@ -50,13 +51,13 @@ SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-# x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-# y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-x_pts = [125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
-        125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125] # seed x points for elevation locations
-y_pts = [115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
-        165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200] # seed y points for elevation locations
+# x_pts = [125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
+#         125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125] # seed x points for elevation locations
+# y_pts = [115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
+#         165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200] # seed y points for elevation locations
 
 
 ADD_NOISE = False    # include additional noise?
@@ -240,8 +241,9 @@ def get_xys( route ):
 # Main processing
 if __name__ == '__main__':
     if ADD_NOISE:
-        x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), SAMPLES) )
-        y_pts.extend( random.sample( range(0, YDIMENSION*YSPACING), SAMPLES) )
+        samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
+        x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), samples) )
+        y_pts.extend( random.sample( range(0, YDIMENSION*YSPACING), samples) )
 
         # delete values near starting area
         for incr, (x, y) in enumerate(zip(x_pts, y_pts)):
@@ -258,7 +260,7 @@ if __name__ == '__main__':
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # # Don't pass border values as their slopes are not accurate due to kerneling method
-    clip = lambda array : array[1:-1, 1:-1]
+    clip = lambda array : array[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
     solutionRoute_greedy = greedyRoute3D(   clip(intensity2DArr),     # map_array of heights
                                             clip(slope),              # array of slope angles
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles

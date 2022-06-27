@@ -82,7 +82,7 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
     
     g_step = lambda node : sqrt(abs( (node.state[0] - node.parent.state[0]) * gridsize[0] ) +   \
                                 abs( (node.state[1] - node.parent.state[1]) * gridsize[1] ) +   \
-                                abs( maze[node.state] - maze[start] ))
+                                abs( maze[node.state] - maze[node.parent.state] ))
 
     frontier = Frontier( f_n, Node(state = start, actual_cost_func=g_step) )
     explored = set()
