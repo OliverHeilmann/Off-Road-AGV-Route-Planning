@@ -34,10 +34,10 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 100    # Max number of nodes in x dir
-YDIMENSION = 100    # Max number of nodes in y dir
+XDIMENSION = 25    # Max number of nodes in x dir
+YDIMENSION = 25    # Max number of nodes in y dir
 
-XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 8    # The spacing between nodes in x, y dir [meters]
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
@@ -48,13 +48,19 @@ USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise rou
 SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 15    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+# x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+# y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+
+x_pts = [125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
+        125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125] # seed x points for elevation locations
+y_pts = [115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
+        165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200] # seed y points for elevation locations
+
 
 ADD_NOISE = False    # include additional noise?
-SAMPLES = 40        # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 65       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -252,18 +258,19 @@ if __name__ == '__main__':
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # # Don't pass border values as their slopes are not accurate due to kerneling method
-    solutionRoute_greedy = greedyRoute3D(   intensity2DArr[1:-1, 1:-1],     # map_array of heights
-                                            slope[1:-1, 1:-1],              # array of slope angles
+    clip = lambda array : array[1:-1, 1:-1]
+    solutionRoute_greedy = greedyRoute3D(   clip(intensity2DArr),     # map_array of heights
+                                            clip(slope),              # array of slope angles
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
-            
-    solutionRoute_astar = astarRoute3D( intensity2DArr[1:-1, 1:-1],     # map_array of heights
-                                        slope[1:-1, 1:-1],              # array of slope angles
+
+    solutionRoute_astar = astarRoute3D( clip(intensity2DArr),     # map_array of heights
+                                        clip(slope),              # array of slope angles
                                         maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     # if a path exists then continue
-    if len(solutionRoute_astar) > 0:
+    if solutionRoute_greedy and solutionRoute_astar:
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]
@@ -283,7 +290,7 @@ if __name__ == '__main__':
 
         # HEADER
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
-        fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Type: Greedy, Max Slope: {MAX_SLOPE_ANGLE})', fontsize=16)
+        fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE})', fontsize=16)
         
         # ELEVATION HEATMAP OUTPUT
         ax1.set(title="Elevation Heatmap")

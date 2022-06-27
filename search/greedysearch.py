@@ -64,12 +64,12 @@ def valid_space(obstacles, space, maxslope):
            and 0 <= space[1] < len(obstacles[0]) \
            and obstacles[space] < maxslope
 
-
 def greedy_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1,1)):
     if goal is None:
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
     # here's our euclidean distance heurstic in 3D space, as a lambda expression
+    # f(n) = h(n) where h(n) is the straight line distance to the goal from current point
     heuristic = lambda node: sqrt(  abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
                                     abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
                                     abs( maze[goal] - maze[node.state] ))
@@ -111,6 +111,19 @@ def greedy_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(
     
     return current_node, number_explored
 
+def total_distance( route, maze, gridsize ):
+    """Return the sum of all the distances traveled on route."""
+    curr = route[0]; nxt = route[0]
+    total = 0
+    for step in route:
+        # update to newest value, then perform distance calc between curr and nxt
+        nxt = step  
+        total += sqrt(  abs((nxt[0] - curr[0]) * gridsize[0] ) +   \
+                        abs((nxt[1] - curr[1]) * gridsize[1] ) +   \
+                        abs(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] - \
+                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])] ))
+        curr = step
+    return round(total,2)
 
 def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
     """Perform Greedy Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
@@ -123,6 +136,7 @@ def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, g
     solution = []
     if final_node is None:
         print("No path exists!\n")
+        return None
     else:
         node = final_node
         steps = 0
@@ -139,4 +153,8 @@ def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, g
         
         print(f"    Total steps on path: {steps}")
         print(f"    Total states explored: {number_explored}")
-    return solution[::-1]   # reverse to start in correct order
+
+        # consider point to point distances not accounding for variations in elevation (height) resulting
+        # in under estimating the actual distance travelled
+        print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
+    return solution[::-1]   # [::-1] reverse to start in correct order

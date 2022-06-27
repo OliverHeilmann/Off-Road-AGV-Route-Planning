@@ -74,16 +74,17 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
     if goal is None:
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
-    # heuristic in 3D = h(x,y,z) + g(x,y,z) where h(..) is cost to goal and g(..) is 
-    # accumulated cost up to this point (from start) - written as lambda expression
-    heuristic = lambda node:node.path_cost + sqrt(  abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
-                                                    abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
-                                                    abs( maze[goal] - maze[node.state] ))
-    h_s = lambda node:sqrt( abs( (node.state[0] - start[0]) * gridsize[0] ) +   \
-                            abs( (node.state[1] - start[1]) * gridsize[1] ) +   \
-                            abs( maze[node.state] - maze[start] ))
+    # f(n) = g(n) + h(n) where h(n) is the straight line distance to the goal from current point
+    # and g(n) is the total cost already accumulated (from start) - written as lambda expression
+    f_n = lambda node : node.path_cost + sqrt(abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
+                                        abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
+                                        abs( maze[goal] - maze[node.state] ))
+    
+    g_step = lambda node : sqrt(abs( (node.state[0] - node.parent.state[0]) * gridsize[0] ) +   \
+                                abs( (node.state[1] - node.parent.state[1]) * gridsize[1] ) +   \
+                                abs( maze[node.state] - maze[start] ))
 
-    frontier = Frontier( heuristic, Node(state = start, actual_cost_func=h_s) )
+    frontier = Frontier( f_n, Node(state = start, actual_cost_func=g_step) )
     explored = set()
 
     current_node = frontier.pop()
@@ -110,7 +111,7 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
             # check if space is valid with the slope map (remember, our heuristic 
             # is actually calculating distances in x,y,z however)
             if valid_space(obstacles, space, maxslope) and space not in explored:
-                node = Node(state=space, parent=current_node, actual_cost_func=h_s)
+                node = Node(state=space, parent=current_node, actual_cost_func=g_step)
                 frontier.push(node)
 
         if frontier.length() == 0:
@@ -120,6 +121,19 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
     
     return current_node, number_explored
 
+def total_distance( route, maze, gridsize ):
+    """Return the sum of all the distances traveled on route."""
+    curr = route[0]; nxt = route[0]
+    total = 0
+    for step in route:
+        # update to newest value, then perform distance calc between curr and nxt
+        nxt = step  
+        total += sqrt(  abs((nxt[0] - curr[0]) * gridsize[0] ) +   \
+                        abs((nxt[1] - curr[1]) * gridsize[1] ) +   \
+                        abs(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] - \
+                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])] ))
+        curr = step
+    return round(total,2)
 
 def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
     """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
@@ -128,10 +142,11 @@ def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gr
                                                 maxslope = maxslope,
                                                 gridsize = gridsize)
     
-    print("A STAR SEARCH:")
+    print("A* SEARCH:")
     solution = []
     if final_node is None:
         print("No path exists!\n")
+        return None
     else:
         node = final_node
         steps = 0
@@ -151,4 +166,8 @@ def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gr
         
         print(f"    Total steps on path: {steps}")
         print(f"    Total states explored: {number_explored}")
-    return solution[::-1]   # reverse to start in correct order
+
+        # consider point to point distances not accounding for variations in elevation (height) resulting
+        # in under estimating the actual distance travelled
+        print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
+    return solution[::-1]   # [::-1] reverse to start in correct order
