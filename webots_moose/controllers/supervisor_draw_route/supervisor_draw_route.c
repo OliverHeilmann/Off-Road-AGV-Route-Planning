@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
+#define TERRAIN_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_heatmap.wbo"  // path to terrain to be imported
+#define CONFIG_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file 
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 
 typedef struct _Vector {
@@ -18,9 +19,61 @@ typedef struct _Vector {
   double z;
 } Vector;
 
+// Read Terrain .wbo shape file (pretend it is text file) and return string of contents
+char* readfile(char *filename)
+{
+   char *buffer = NULL;
+   int string_size, read_size;
+   FILE *handler = fopen(filename, "r");
+
+   if (handler)
+   {
+       // Seek the last byte of the file
+       fseek(handler, 0, SEEK_END);
+       // Offset from the first to the last byte, or in other words, filesize
+       string_size = ftell(handler);
+       // go back to the start of the file
+       rewind(handler);
+
+       // Allocate a string that can hold it all
+       buffer = (char*) malloc(sizeof(char) * (string_size + 1) );
+
+       // Read it all in one operation
+       read_size = fread(buffer, sizeof(char), string_size, handler);
+
+       // fread doesn't set it so put a \0 in the last position
+       // and buffer is now officially a string
+       buffer[string_size] = '\0';
+
+       if (string_size != read_size)
+       {
+           // Something went wrong, throw away the memory and set
+           // the buffer to NULL
+           free(buffer);
+           buffer = NULL;
+       }
+
+       // Always remember to close the file.
+       fclose(handler);
+    }
+    return buffer;
+}
+
+// Create the trail shape with the correct number of coordinates.
+static void create_terrain( char* terrain_string ) {
+  // If TERRAIN exists in the world then silently remove it.
+  WbNodeRef existing_terrain = wb_supervisor_node_get_from_def("TERRAIN");
+  if (existing_terrain)
+    wb_supervisor_node_remove(existing_terrain);
+
+  // Import TERRAIN and append it as the world root nodes.
+  WbFieldRef root_children_field = wb_supervisor_node_get_field(wb_supervisor_node_get_root(), "children");
+  wb_supervisor_field_import_mf_node_from_string(root_children_field, -1, terrain_string);
+}
+
 // Create the trail shape with the correct number of coordinates.
 static void create_route_shape( int *max_num_coords ) {
-  // If TRAIL exists in the world then silently remove it.
+  // If MAP_ROUTE exists in the world then silently remove it.
   WbNodeRef existing_route = wb_supervisor_node_get_from_def("MAP_ROUTE");
   if (existing_route)
     wb_supervisor_node_remove(existing_route);
@@ -28,7 +81,7 @@ static void create_route_shape( int *max_num_coords ) {
   int i;
   char route_string[0x10000] = "\0";  // Initialize a big string which will contain the TRAIL node.
 
-  // Create the TRAIL Shape.
+  // Create the MAP_ROUTE Shape.
   strcat(route_string, "DEF MAP_ROUTE Shape {\n");
   strcat(route_string, "  appearance Appearance {\n");
   strcat(route_string, "    material Material {\n");
@@ -56,11 +109,11 @@ static void create_route_shape( int *max_num_coords ) {
 }
 
 // Open the vehicle configuration file and extract the translation and rotation values
-Vector* vehicle_config ( double *new_translation, int *tps, Vector coords[] ) {
+Vector* vehicle_config( double *new_translation, int *tps, Vector coords[] ) {
   char * line = NULL;
   size_t len = 0;
   ssize_t read;
-  FILE * fp = fopen(PATH, "r");
+  FILE * fp = fopen(CONFIG_PATH, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
 
@@ -117,42 +170,55 @@ Vector* vehicle_config ( double *new_translation, int *tps, Vector coords[] ) {
 int main(int argc, char **argv) {
   wb_robot_init();
 
-  // Open text file with vehicle configs, update the translation and rotation fields
-  double new_translation[3] = {0, 0, 0};
-  int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
-  Vector coordinates[target_points_size];
-  Vector *new_coords = vehicle_config( new_translation, &target_points_size, coordinates );
+  // get terrain .wbo file and return the string of contents
+  char *terrain_string = readfile( TERRAIN_PATH );
+  
+  // if a result is returned, import it
+  if (terrain_string)
+    {
+      // create new TERRAIN node in environment
+      create_terrain(terrain_string);
 
-  // // Get route supervisor node and then move to desired coords at startup
-  WbNodeRef route_node = wb_supervisor_node_get_from_def("SUPER_ROUTE");
-  WbFieldRef translation_field = wb_supervisor_node_get_field(route_node, "translation");
-  wb_supervisor_field_set_sf_vec3f(translation_field, new_translation);
+      // Open text file with vehicle configs, update the translation and rotation fields
+      double new_translation[3] = {0, 0, 0};
+      int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
+      Vector coordinates[target_points_size];
+      Vector *new_coords = vehicle_config( new_translation, &target_points_size, coordinates );
 
-  // Create the MAP_ROUTE Shape which will contain the red line set.
-  create_route_shape( &target_points_size );
+      // // Get route supervisor node and then move to desired coords at startup
+      WbNodeRef route_node = wb_supervisor_node_get_from_def("SUPER_ROUTE");
+      WbFieldRef translation_field = wb_supervisor_node_get_field(route_node, "translation");
+      wb_supervisor_field_set_sf_vec3f(translation_field, new_translation);
 
-  // Get interesting references to the TRAIL subnodes.
-  WbNodeRef route_line_set_node = wb_supervisor_node_get_from_def("ROUTE_LINE_SET");
-  WbNodeRef coordinates_node = wb_supervisor_field_get_sf_node(wb_supervisor_node_get_field(route_line_set_node, "coord"));
-  WbFieldRef point_field = wb_supervisor_node_get_field(coordinates_node, "point");
-  WbFieldRef coord_index_field = wb_supervisor_node_get_field(route_line_set_node, "coordIndex");
+      // Create the MAP_ROUTE Shape which will contain the red line set.
+      create_route_shape( &target_points_size );
 
-  // Loop through waypoint coordinates and draw lines between them
-  for (int i = 0; i < target_points_size; i++) {
+      // Get interesting references to the TRAIL subnodes.
+      WbNodeRef route_line_set_node = wb_supervisor_node_get_from_def("ROUTE_LINE_SET");
+      WbNodeRef coordinates_node = wb_supervisor_field_get_sf_node(wb_supervisor_node_get_field(route_line_set_node, "coord"));
+      WbFieldRef point_field = wb_supervisor_node_get_field(coordinates_node, "point");
+      WbFieldRef coord_index_field = wb_supervisor_node_get_field(route_line_set_node, "coordIndex");
 
-    // extract Vector struct params and reformat to Webots format
-    double target_translation[3] =  {  new_coords[i].x, new_coords[i].y, new_coords[i].z };
+      // Loop through waypoint coordinates and draw lines between them
+      for (int i = 0; i < target_points_size; i++) {
 
-    // Add the new target translation in the line set.
-    wb_supervisor_field_set_mf_vec3f(point_field, i, target_translation);
+        // extract Vector struct params and reformat to Webots format
+        double target_translation[3] =  {  new_coords[i].x, new_coords[i].y, new_coords[i].z };
 
-    // Update the line set indices.
-    if (i > 0) {
-      // Link successive indices.
-      wb_supervisor_field_set_mf_int32(coord_index_field, 3 * (i - 1), i - 1);
-      wb_supervisor_field_set_mf_int32(coord_index_field, 3 * (i - 1) + 1, i);
+        // Add the new target translation in the line set.
+        wb_supervisor_field_set_mf_vec3f(point_field, i, target_translation);
+
+        // Update the line set indices.
+        if (i > 0) {
+          // Link successive indices.
+          wb_supervisor_field_set_mf_int32(coord_index_field, 3 * (i - 1), i - 1);
+          wb_supervisor_field_set_mf_int32(coord_index_field, 3 * (i - 1) + 1, i);
+        }
+      }
     }
-  }
+    else {
+      printf("[ERROR]: No terrain map found. Check if format is correct or change path to correct directory.");
+    }
   // // closing stuff
   wb_robot_cleanup();
   return EXIT_SUCCESS;

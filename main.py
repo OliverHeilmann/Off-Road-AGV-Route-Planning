@@ -105,7 +105,7 @@ def wbo_map( intensityMap : np.ndarray ):
 
     # structure of .wbo file
     formatted =  """#VRML_OBJ R2022a utf8
-Solid {{
+DEF TERRAIN Solid {{
     translation {} {} {}
     children [
         Shape {{
