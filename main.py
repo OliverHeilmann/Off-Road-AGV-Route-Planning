@@ -38,7 +38,7 @@ XDIMENSION = 100    # Max number of nodes in x dir
 YDIMENSION = 100    # Max number of nodes in y dir
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 2            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
@@ -49,7 +49,7 @@ USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise ro
 SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 25    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
@@ -265,8 +265,12 @@ if __name__ == '__main__':
                                         maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
+    # shift results to account for lambda border clipping step shown above
+    solutionRoute_greedy = np.array(solutionRoute_greedy) + CORNER_SIZE
+    solutionRoute_astar = np.array(solutionRoute_astar) + CORNER_SIZE
+
     # if a path exists then continue
-    if solutionRoute_greedy and solutionRoute_astar:
+    if solutionRoute_greedy.any() and solutionRoute_astar.any():
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]

@@ -5,7 +5,7 @@ Description:
 By Oliver Heilmann
 Modified from ...
 """
-
+import time
 import numpy as np
 from math import sqrt
 from priorityqueue import PriorityQueue
@@ -137,10 +137,12 @@ def total_distance( route, maze, gridsize ):
 
 def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
     """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
+    starttime = time.time()
     final_node, number_explored = astar_search( maze = intensitymap,
                                                 obstacles = slopemap,
                                                 maxslope = maxslope,
                                                 gridsize = gridsize)
+    endtime = round((time.time() - starttime), 2)
     
     print("A* SEARCH:")
     solution = []
@@ -166,6 +168,7 @@ def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gr
         
         print(f"    Total steps on path: {steps}")
         print(f"    Total states explored: {number_explored}")
+        print(f"    Total time till solution: {endtime} [s]")
 
         # consider point to point distances not accounding for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
