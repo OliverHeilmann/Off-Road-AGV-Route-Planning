@@ -122,7 +122,7 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
 
 
 def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
-    """Perform Greedy Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
+    """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
     final_node, number_explored = astar_search( maze = intensitymap,
                                                 obstacles = slopemap,
                                                 maxslope = maxslope,
