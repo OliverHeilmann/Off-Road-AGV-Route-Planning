@@ -38,7 +38,7 @@ XDIMENSION = 100    # Max number of nodes in x dir
 YDIMENSION = 100    # Max number of nodes in y dir
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 2            # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
@@ -244,12 +244,15 @@ if __name__ == '__main__':
             if x < H and y < H: del x_pts[incr], y_pts[incr]
 
     # Create intensity 2D numpy array using user defined params
+    print("[INFO]: Creating Intensity Map...")
     (x_mesh, y_mesh), intensity2DArr = intensity_map( x_pts, y_pts )
 
     # Generate output .wbo file using 2D numpy array
+    print("[INFO]: Creating WeBots Map...")
     wbo_map( intensity2DArr )
 
     # Slope Map generation
+    print("[INFO]: Calculating Slope Map...")
     slope = slope_map( intensity2DArr )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
@@ -290,7 +293,7 @@ if __name__ == '__main__':
 
         # HEADER
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
-        fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE})', fontsize=16)
+        fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Vehicle Max Slope: {MAX_SLOPE_ANGLE} [rad])', fontsize=16)
         
         # ELEVATION HEATMAP OUTPUT
         ax1.set(title="Elevation Heatmap")
