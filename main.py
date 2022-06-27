@@ -28,7 +28,7 @@ from scipy import stats
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.19      # Maximum permissible slope angle for vehicle as ratio of Rise/Run
+MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
@@ -38,30 +38,24 @@ XDIMENSION = 100    # Max number of nodes in x dir
 YDIMENSION = 100    # Max number of nodes in y dir
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
 ZTRANSLATE = 0                                  # Offset for terrain in z dir
 
-USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 8    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 25    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-# x_pts = [125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
-#         125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125] # seed x points for elevation locations
-# y_pts = [115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
-#         165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200] # seed y points for elevation locations
-
-
 ADD_NOISE = True   # include additional noise?
-SAMPLES = 99       # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 

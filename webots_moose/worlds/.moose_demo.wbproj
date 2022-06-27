@@ -6,5 +6,5 @@ minimizedPerspectives: 000000ff00000000fd00000003000000000000000000000000fc01000
 maximizedDockId: -1
 centralWidgetVisible: 1
 orthographicViewHeight: 1
-textFiles: 1 "controllers/supervisor_draw_trail_mod/supervisor_draw_trail_mod.c" "controllers/supervisor_draw_route/supervisor_draw_route.c"
+textFiles: 0 "controllers/supervisor_draw_trail_mod/supervisor_draw_trail_mod.c" "controllers/supervisor_draw_route/supervisor_draw_route.c"
 consoles: Console:All:All
