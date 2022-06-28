@@ -75,7 +75,8 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
     # f(n) = g(n) + h(n) where h(n) is the straight line distance to the goal from current point
-    # and g(n) is the total cost already accumulated (from start) - written as lambda expression
+    # and g(n) is the total cost already accumulated called path_cost (from start) - written as 
+    # lambda expression
     f_n = lambda node : node.path_cost + sqrt(  abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
                                                 abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
                                                 abs( maze[goal] - maze[node.state] ))
