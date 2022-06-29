@@ -8,3 +8,5 @@ build
 
 # ignore specific executables
 webots_moose/controllers/supervisor_draw_route/supervisor_draw_route
+webots_moose/controllers/moose_path_following_mod/moose_path_following_mod
+webots_moose/controllers/supervisor_draw_trail_mod/supervisor_draw_trail_mod
