@@ -83,7 +83,7 @@ def intensity_map( xs : list, ys : list ):
             kde_value_list=[]
             for i in range(len(xs)):
                 # Calculate distance
-                d=math.sqrt((xc[j][k]-xs[i])**2+(yc[j][k]-ys[i])**2) 
+                d = math.sqrt( math.pow(xc[j][k]-xs[i],2) + math.pow(yc[j][k]-ys[i],2) )
                 if d<=H:
                     p=kde_quartic(d,H)
                 else:
