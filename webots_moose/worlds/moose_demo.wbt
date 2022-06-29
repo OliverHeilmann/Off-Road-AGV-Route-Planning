@@ -27,7 +27,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.22786673503935687 0.24650116604630215 0.941973421175097 1.6642835752952265
-  position 2.501130177466538 -61.14797848466503 32.93238952850455
+  position 3.6116894759267373 -87.75611394914472 47.507983284307976
   near 1
   follow "moose"
 }
@@ -73,8 +73,8 @@ DEF PLANE Solid {
     Shape {
       appearance SandyGround {
         textureTransform TextureTransform {
-          rotation 1
-          scale 200 200
+          rotation 2
+          scale 75 75
         }
       }
       geometry DEF PLANE_SHAPE Plane {

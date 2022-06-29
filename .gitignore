@@ -3,3 +3,8 @@
 __pycache__
 .vscode
 dep
+*.cache
+build
+
+# ignore specific executables
+webots_moose/controllers/supervisor_draw_route/supervisor_draw_route
