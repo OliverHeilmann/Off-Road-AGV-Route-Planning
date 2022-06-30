@@ -13,7 +13,7 @@ PROTO CustomAppearance [
     baseColor IS colorOverride
     baseColorMap ImageTexture {
       url [
-        "//Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/webots_moose/protos/textures/randomMap.png"
+        "//Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/webots_moose/protos/textures/CustomAppearance.png"
       ]
       filtering 5
     }

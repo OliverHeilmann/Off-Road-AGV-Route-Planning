@@ -24,6 +24,7 @@ import sys
 sys.path.append('./search')     # add 'search' directory to path
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
+from maps.terrain import Terrain
 from scipy import stats
 
 ############################## SETUP ###################################

@@ -63,14 +63,12 @@ SAMPLES = 85       # Number of additional random samples used to generate heat m
 #######################################################################
 
 
-
 class Terrain:
     def __init__( self, params):
         self.params = params
 
         # self.featureMap = defaultdict(lambda : {f:v for f, v in zip(["elevation", "slope", "image", "larea", "iop"],
         #                                                             [     0,         0,      [],         [],    0 ])})
-
         self.x_mesh = list
         self.y_mesh = list
         self.intensityMap = np.ndarray
@@ -78,6 +76,10 @@ class Terrain:
         self.slopeMap = np.ndarray
 
         self.imageMap = np.ndarray
+
+        self.larea = np.ndarray
+        
+        self.iop = np.array  
 
     def kde_quartic( self, d, H ):
         """Function to calculate intensity with quartic kernel."""
@@ -181,14 +183,13 @@ boundingObject USE TERRAIN_MAP
         return self.slopeMap
 
     def image_map( self, imageDir = "webots_moose/protos/textures/CustomAppearance.png", size = 2048 ):
-
+        """Divide terrain image into same number of grid squares as other terrain features."""
         # Load an color image in BGR, reformat and get key params
         img = cv2.imread( imageDir )
         img = cv2.resize(img, (size, size), interpolation = cv2.INTER_AREA)
         row, col, _ = img.shape
         
-        XDIMENSION = YDIMENSION = 8
-
+        # calculate segment size in pixels
         M = row//YDIMENSION
         N = col//XDIMENSION
         
@@ -206,48 +207,25 @@ boundingObject USE TERRAIN_MAP
             for cn, c in enumerate(range(0,col,N)):
                 self.imageMap[rn][cn] = img[r-M:r, c:c+N]
 
+        # check segmentation has worked...
+        # cv2.imshow( 'Main', img )
+        # for row in self.imageMap:
+        #     for col in row:
+        #         cv2.imshow( 'Tile', col )
+        #         cv2.waitKey(0)
+        #         cv2.destroyWindow("Tile")
+        # cv2.destroyAllWindows()
+        return self.imageMap
 
-        # check segmentation has worked
-        cv2.imshow( 'Main', img )
-        for row in self.imageMap:
-            for col in row:
-                cv2.imshow( 'Tile', col )
-                cv2.waitKey(0)
-                cv2.destroyWindow("Tile")
-        cv2.destroyAllWindows()
-
-        # for rn, r in enumerate(range(row,0,-M)):
-        #     for cn, c in enumerate(range(0,col,N)):
-        #         # if not a right or up border tile then add to imgMap
-        #         if (rn+1) % (row//M+1) != 0 and (cn+1) % (col//N+1) != 0:
-        #             imgMap[rn][cn] = img[r-M:r, c:c+N] 
-                
-        #         # if remainder exists and at row border, concatenate with below tile
-        #         elif rn == row//M:
-        #             # if at penultimate column, concatenate with final and then below to
-        #             # avoid differing array size errors
-        #             if rn - cn == 1:
-        #                 temp = np.concatenate( ( img[r-M:r, c:c+N] , img[r-M:r, c+N:c+2*N] ),  axis=1 )
-        #                 imgMap[rn-1][cn] = np.concatenate( ( temp , imgMap[rn-1][cn] ),  axis=0 )
-        #                 break
-        #             else:
-        #                 imgMap[rn-1][cn] = np.concatenate( ( img[r-M:r, c:c+N] , imgMap[rn-1][cn] ),  axis=0 )
-
-        #         # if remainder exists and at column border, concatenate with left tile
-        #         else:
-        #             imgMap[rn][cn-1] = np.concatenate( ( imgMap[rn][cn-1] , img[r-M:r, c:c+N] ),  axis=1 )
-
-        # tiles = [ [img[r-M:r,c:c+N ], (c, r), (c+N, r-M)] for r in range(row,0,-M) for c in range(0,col,N) ]
-        # for num, tile in enumerate(tiles):
-        #     cv2.imshow(f'Tile {num+1}',tile[0])
-
-        #     A = tile[1]
-        #     B = tile[2]            
-        #     cv2.rectangle(img, A, B, (255,0,0), 4)
-        #     cv2.imshow('image',img)
-
-        #     cv2.waitKey(0)
-        #     cv2.destroyAllWindows()
+    def get_features( self, r : int, c : int ):
+        """Return a dictionary of grid features for the given row and column."""
+        keys = [ "elevation", "slope", "image", "larea", "iop" ]
+        values = [  self.intensityMap[r][c],
+                    self.slopeMap[r][c],
+                    self.imageMap[r][c], 
+                    [],
+                    0                       ]
+        return { k : v for k, v in zip(keys, values) }
 
 
 # Function to check if x is power of 2
