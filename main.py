@@ -38,7 +38,7 @@ XDIMENSION = 100    # Max number of nodes in x dir
 YDIMENSION = 100    # Max number of nodes in y dir
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
@@ -46,7 +46,8 @@ ZTRANSLATE = 0                                  # Offset for terrain in z dir
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
-SCALE = 10  # Scale of appearance image over texture (in WeBots simulator)
+APPEARANCE = "CustomAppearance"     # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1
+SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -111,7 +112,7 @@ DEF TERRAIN Solid {{
     translation {} {} {}
     children [
         Shape {{
-            appearance SandyGround {{
+            appearance {} {{
                 textureTransform TextureTransform {{
                 scale {} {}
             }}
@@ -130,6 +131,7 @@ boundingObject USE TERRAIN_MAP
 }}  """.format( XTRANSLATE,
                 YTRANSLATE,
                 ZTRANSLATE,
+                APPEARANCE,
                 SCALE, SCALE,
                 heights,
                 XDIMENSION,
