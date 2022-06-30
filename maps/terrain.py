@@ -1,0 +1,274 @@
+"""
+Description:
+    -   Creates WeBots readable terrain elevation map of .wbo file format. This approach uses
+        randomly generated points [x,y] and a quartic regression function to determine point
+        densities, called Kernel Density Estimation (KDE); higher point densities correspond 
+        to higher elevations.
+    -   Using the output terrain elevation map, a slope map is generated using the method shown
+        in the imgs folder (https://www.mdpi.com/2220-9964/10/11/785).
+    -   Using the aforementioned slope map, a path planning algorithm is used to plot a route
+        between two points, while avoiding regions of non-permissable slope angles (a param
+        defined in the setup section).
+    -   To reduce the number of waypoints required, an R2 approach is then used to select a
+        minimum number of waypoints required to reach the target location. The results are
+        saved into a text file thereafter.
+    -   Results are plotted as two heat maps using Matplotlib
+
+By Oliver Heilmann
+"""
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+import random
+import sys
+sys.path.append('./search')     # add 'search' directory to path
+from greedysearch import greedyRoute3D
+from astarsearch import astarRoute3D
+from scipy import stats
+
+
+from collections import defaultdict
+import cv2
+
+############################## SETUP ###################################
+#### WEBOTS VEHICLE PROPERTIES
+MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians
+VEHICLE_LENGTH = 2.964      # Vehicle length in meters
+VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
+RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
+
+#### WEBOTS ELEVATION MAP PARAMS
+XDIMENSION = YDIMENSION = 128   # Max number of nodes in x, y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 1         # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
+
+XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
+YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
+ZTRANSLATE = 0                                  # Offset for terrain in z dir
+
+USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+
+APPEARANCE = "CustomAppearance"     # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1
+SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
+
+#### KERNEL DENSITY ESTIMATOR PARAMS
+H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+
+x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+
+ADD_NOISE = True   # include additional noise?
+SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
+
+#######################################################################
+
+
+
+class Terrain:
+    def __init__( self, params):
+        self.params = params
+
+        # self.featureMap = defaultdict(lambda : {f:v for f, v in zip(["elevation", "slope", "image", "larea", "iop"],
+        #                                                             [     0,         0,      [],         [],    0 ])})
+
+        self.x_mesh = list
+        self.y_mesh = list
+        self.intensityMap = np.ndarray
+
+        self.slopeMap = np.ndarray
+
+        self.imageMap = np.ndarray
+
+    def kde_quartic( self, d, H ):
+        """Function to calculate intensity with quartic kernel."""
+        dn=d/H
+        P=(15/16)*(1-dn**2)**2
+        return P
+
+    def intensity_map( self, xs : list, ys : list ):
+        """Take input points and return an intensity map as a 2D numpy array."""
+        # Construct grid
+        x_grid = np.arange(0,XDIMENSION*XSPACING,XSPACING)
+        y_grid = np.arange(0,YDIMENSION*YSPACING,YSPACING)
+        self.x_mesh, self.y_mesh = np.meshgrid(x_grid,y_grid)
+
+        # Grid center points
+        xc=self.x_mesh+(XSPACING/2)
+        yc=self.y_mesh+(YSPACING/2)
+
+        self.intensityMap = np.full( (XDIMENSION, YDIMENSION), 0.0 )
+        for j in range(len(xc)):
+            for k in range(len(xc[0])):
+                kde_value_list=[]
+                for i in range(len(xs)):
+                    # Calculate distance
+                    d = math.sqrt( math.pow(xc[j][k]-xs[i],2) + math.pow(yc[j][k]-ys[i],2) )
+                    if d<=H:
+                        p=self.kde_quartic(d,H)
+                    else:
+                        p=0
+                    kde_value_list.append(p)
+                # Sum all intensity values
+                p_total=sum(kde_value_list)
+                self.intensityMap[j][k] = p_total
+        
+        # Turn intensity list into numpy array and then set border heights to 0
+        self.intensityMap[0,:-1] = self.intensityMap[:-1,-1] = self.intensityMap[:-1,0] = self.intensityMap[-1,:-1] = 0
+        return (self.x_mesh, self.y_mesh), self.intensityMap
+
+    def wbo_map( self, intensityMap : np.ndarray ):
+        """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
+
+        # convert numpy array into string format usable by .wbo file format
+        heights = ",".join( [",".join(item) for item in np.round(intensityMap,2).astype(str)] )
+
+        # structure of .wbo file
+        formatted =  """#VRML_OBJ R2022a utf8
+DEF TERRAIN Solid {{
+    translation {} {} {}
+    children [
+        Shape {{
+            appearance {} {{
+                textureTransform TextureTransform {{
+                scale {} {}
+            }}
+            }}
+            geometry DEF TERRAIN_MAP ElevationGrid {{
+                height [{}]
+                xDimension {}
+                xSpacing {}
+                yDimension {}
+                ySpacing {}
+            }}
+        }}
+    ]
+name "ELE_MOD"
+boundingObject USE TERRAIN_MAP
+}}"""   .format(XTRANSLATE,
+                YTRANSLATE,
+                ZTRANSLATE,
+                APPEARANCE,
+                SCALE, SCALE,
+                heights,
+                XDIMENSION,
+                XSPACING,
+                YDIMENSION,
+                YSPACING
+                )
+        try:
+            with open('maps/elevationmap_heatmap.wbo', 'w') as f:
+                f.write( formatted )
+                f.close()
+        except:
+            raise ValueError('"elevationmap_heatmap.wbo" did not save!')
+
+    def slope_map( self, elev : np.ndarray ):
+        """Calculate the slope map using previously generated terrain elevation data."""
+        rows, cols = elev.shape
+        self.slopeMap = np.zeros([rows, cols])
+        elev = np.pad(elev, 1, mode='symmetric')   # add padding for kernel
+        for i in range(1,rows+1):
+            for j in range(1,cols+1):
+                slope_we = ((elev[i+1][j-1] + 2*elev[i][j-1] + elev[i-1][j-1]) -    \
+                            (elev[i+1][j+1] + 2*elev[i][j+1] + elev[i-1][j+1]))/    \
+                            8 * XSPACING
+
+                slope_sn = ((elev[i+1][j+1] + 2*elev[i+1][j] + elev[i+1][j-1]) -    \
+                            (elev[i-1][j+1] + 2*elev[i-1][j] + elev[i-1][j-1]))/    \
+                            8 * YSPACING
+
+                self.slopeMap[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
+        return self.slopeMap
+
+    def image_map( self, imageDir = "webots_moose/protos/textures/CustomAppearance.png", size = 2048 ):
+
+        # Load an color image in BGR, reformat and get key params
+        img = cv2.imread( imageDir )
+        img = cv2.resize(img, (size, size), interpolation = cv2.INTER_AREA)
+        row, col, _ = img.shape
+        
+        XDIMENSION = YDIMENSION = 8
+
+        M = row//YDIMENSION
+        N = col//XDIMENSION
+        
+        # get tiles in format/ sequence shown below:
+        #     y
+        #     ^
+        #     |   1,0      1,1
+        #     |
+        #     |   0,0      0,1
+        #   (0,0)–––––––––––––––––> x
+        # imgMap is a 2D array with the corresponding image section contained within
+        # e.g. imgMap[0][0] would contain an image of size MxN pixels
+        self.imageMap = np.zeros( (YDIMENSION, XDIMENSION) , dtype=object)
+        for rn, r in enumerate(range(row,0,-M)):
+            for cn, c in enumerate(range(0,col,N)):
+                self.imageMap[rn][cn] = img[r-M:r, c:c+N]
+
+
+        # check segmentation has worked
+        cv2.imshow( 'Main', img )
+        for row in self.imageMap:
+            for col in row:
+                cv2.imshow( 'Tile', col )
+                cv2.waitKey(0)
+                cv2.destroyWindow("Tile")
+        cv2.destroyAllWindows()
+
+        # for rn, r in enumerate(range(row,0,-M)):
+        #     for cn, c in enumerate(range(0,col,N)):
+        #         # if not a right or up border tile then add to imgMap
+        #         if (rn+1) % (row//M+1) != 0 and (cn+1) % (col//N+1) != 0:
+        #             imgMap[rn][cn] = img[r-M:r, c:c+N] 
+                
+        #         # if remainder exists and at row border, concatenate with below tile
+        #         elif rn == row//M:
+        #             # if at penultimate column, concatenate with final and then below to
+        #             # avoid differing array size errors
+        #             if rn - cn == 1:
+        #                 temp = np.concatenate( ( img[r-M:r, c:c+N] , img[r-M:r, c+N:c+2*N] ),  axis=1 )
+        #                 imgMap[rn-1][cn] = np.concatenate( ( temp , imgMap[rn-1][cn] ),  axis=0 )
+        #                 break
+        #             else:
+        #                 imgMap[rn-1][cn] = np.concatenate( ( img[r-M:r, c:c+N] , imgMap[rn-1][cn] ),  axis=0 )
+
+        #         # if remainder exists and at column border, concatenate with left tile
+        #         else:
+        #             imgMap[rn][cn-1] = np.concatenate( ( imgMap[rn][cn-1] , img[r-M:r, c:c+N] ),  axis=1 )
+
+        # tiles = [ [img[r-M:r,c:c+N ], (c, r), (c+N, r-M)] for r in range(row,0,-M) for c in range(0,col,N) ]
+        # for num, tile in enumerate(tiles):
+        #     cv2.imshow(f'Tile {num+1}',tile[0])
+
+        #     A = tile[1]
+        #     B = tile[2]            
+        #     cv2.rectangle(img, A, B, (255,0,0), 4)
+        #     cv2.imshow('image',img)
+
+        #     cv2.waitKey(0)
+        #     cv2.destroyAllWindows()
+
+
+# Function to check if x is power of 2
+def isPowerOfTwo(n):
+    if (n == 0):
+        return False
+    while (n != 1):
+            if (n % 2 != 0):
+                return False
+            n = n // 2
+    return True
+
+if __name__ == '__main__':
+
+    # check params ar acceptable...
+    if not isPowerOfTwo(XDIMENSION) or not isPowerOfTwo(YDIMENSION):
+        raise ValueError("""\n\n[ERROR]: XDIMENSION and YDIMENSION must be a power of two!
+         WeBots will reformat the image dimensions when applied onto the terrain. As the calculations
+         for terrain passability require equal and accurate grid squares, a reformatting of the image
+         shape would lead to inaccurate estimations of path costs.\n\n""")
+        
+    map = Terrain( 1 )
+    # map.intensity_map( x_pts, y_pts )
+    map.image_map()

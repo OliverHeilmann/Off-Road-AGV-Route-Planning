@@ -34,8 +34,8 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 100    # Max number of nodes in x dir
-YDIMENSION = 100    # Max number of nodes in y dir
+XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
@@ -233,9 +233,25 @@ def get_xys( route ):
     ys = [coord[1]+YSPACING for coord in route]
     return xs, ys
 
+def isPowerOfTwo(n):
+    """Function to check if x is power of 2."""
+    if (n == 0):
+        return False
+    while (n != 1):
+            if (n % 2 != 0):
+                return False
+            n = n // 2
+    return True
 
 # Main processing
 if __name__ == '__main__':
+    # check params ar acceptable...
+    if not isPowerOfTwo(XDIMENSION) or not isPowerOfTwo(YDIMENSION):
+        raise ValueError("""\n\n[ERROR]: XDIMENSION and YDIMENSION must be a power of two!
+         WeBots will reformat the image dimensions when applied onto the terrain. As the calculations
+         for terrain passability require equal and accurate grid squares, a reformatting of the image
+         shape would lead to inaccurate estimations of path costs.\n\n""")
+       
     if ADD_NOISE:
         samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
         x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), samples) )
