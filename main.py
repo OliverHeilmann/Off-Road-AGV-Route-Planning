@@ -39,8 +39,8 @@ RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower v
 XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
 YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 2    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 7            # Number of corners to ignore for path planning (to not fall off edge of map)
+XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 2            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
@@ -57,23 +57,6 @@ H = 10    # Radius (h) defines how much affect each point has to KDE (higher H i
 
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
-
-x_pts.extend([125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
-            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
-            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
-            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
-            105, 105, 105, 105, 105, 115, 115, 115, 115,115, 115]) # seed x points for elevation locations
-x_pts.extend([125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
-            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
-            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125]) # seed x points for elevation locations
-y_pts.extend([115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
-            165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200,
-            15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 30, 30, 45, 45, 45, 45, 45, 45, 55, 55, 55, 55,
-            65, 65, 65, 65, 65, 90, 90, 90, 90, 90, 90, 90, 90, 90, 100, 100, 100, 100, 100, 100, 100, 100,
-            160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160]) # seed y points for elevation locations
-y_pts.extend([115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
-            165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200,
-            15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 30, 30, 45, 45, 45, 45, 45, 45, 55, 55, 55, 55]) # seed y points for elevation locations
 
 ADD_NOISE = False   # include additional noise?
 SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile

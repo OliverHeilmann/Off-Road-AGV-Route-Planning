@@ -32,7 +32,7 @@ class PriorityQueue:
             if task is not self.REMOVED:
                 del self.entry_finder[task]
                 return task
-        raise KeyError('pop from an empty priority queue')
+        raise KeyError('\n\n[ERROR]: Pop from an empty priority queue!\n\n')
 
     # Some useful additional methods not taken from Python docs
     def contains(self, state):
