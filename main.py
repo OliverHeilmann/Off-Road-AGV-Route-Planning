@@ -37,14 +37,14 @@ RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower v
 
 #### WEBOTS ELEVATION MAP PARAMS
 XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 128   # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
 
-XTRANSLATE = -round((XDIMENSION-1)*XSPACING / 2.)   # Offset for terrain in x dir
-YTRANSLATE = -round((YDIMENSION-1)*YSPACING / 2.)   # Offset for terrain in y dir
-ZTRANSLATE = 0                                      # Offset for terrain in z dir
+XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
+YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
+ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
@@ -55,10 +55,10 @@ PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = []#[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = []#[10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = False   # include additional noise?
+ADD_NOISE = True   # include additional noise?
 SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
@@ -228,15 +228,15 @@ boundingObject USE TERRAIN_MAP
         """Save key Webots startup information in text file for C code."""
 
         # calculate translation values
-        tx = str(wpts[0][0] - (((XDIMENSION-1)*XSPACING)/2) + XSPACING)
-        ty = str(wpts[0][1] - (((YDIMENSION-1)*YSPACING)/2) + YSPACING)
-        tz = str(elev[int(wpts[0][0]/XSPACING)][int(wpts[0][1]/YSPACING)] + VEHICLE_HEIGHT/2)
+        tx = str(wpts[0][0] + XTRANSLATE + XSPACING)
+        ty = str(wpts[0][1] + YTRANSLATE + YSPACING)
+        tz = str(elev[0][0] + VEHICLE_HEIGHT/2)
 
         # put all waypoints into string and adjust for elevation map offset in WeBots
-        wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] - (((XDIMENSION-1)*XSPACING)/2) + XSPACING),
-                                                        str(el[1] - (((YDIMENSION-1)*YSPACING)/2) + YSPACING),
-                                                        str(round(elev[int(el[1]/XSPACING)][int(el[0]/YSPACING)] + VEHICLE_HEIGHT/2,4)))
-                                                        for el in wpts] )
+        wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
+                                                str(el[1] + YTRANSLATE + YSPACING),
+                                                str(round(elev[el[1]+CORNER_SIZE][el[0]+CORNER_SIZE] + VEHICLE_HEIGHT/2,4)))
+                                                for el in wpts] )
 
         # structure of .wbo file
         formatted =  """Vehicle Config File
@@ -322,11 +322,11 @@ if __name__ == '__main__':
          for terrain passability require equal and accurate grid squares, a reformatting of the image
          shape would lead to inaccurate estimations of path costs.\n\n""")
     else:
-        # Otherwise add 1 to each value so that grid squares = nodes - 1 (needed to scale image size in Webots)
-        XDIMENSION += 1; YDIMENSION += 1
-
         # silently make sure pixel resolution is greater or equal to grid resolution
         PIXEL_RESOLUTION = XDIMENSION if PIXEL_RESOLUTION < XDIMENSION else PIXEL_RESOLUTION
+
+        # Otherwise add 1 to each value so that grid squares = nodes - 1 (needed to scale image size in Webots)
+        XDIMENSION += 1; YDIMENSION += 1
        
     if ADD_NOISE:
         samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
@@ -368,12 +368,11 @@ if __name__ == '__main__':
                                         maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    # shift results to account for lambda border clipping step shown above
-    solutionRoute_greedy = np.array(solutionRoute_greedy)
-    solutionRoute_astar = np.array(solutionRoute_astar)
-
     # if a path exists then continue
-    if solutionRoute_greedy.any() and solutionRoute_astar.any():
+    if solutionRoute_greedy and solutionRoute_astar:
+        # shift results to account for lambda border clipping step shown above
+        solutionRoute_greedy = np.array(solutionRoute_greedy) + (CORNER_SIZE-1)*XSPACING
+        solutionRoute_astar = np.array(solutionRoute_astar) + (CORNER_SIZE-1)*XSPACING
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]
@@ -398,7 +397,8 @@ if __name__ == '__main__':
         # ELEVATION HEATMAP OUTPUT
         ax1.set(title="Elevation Heatmap")
         ax1.plot(x_pts,y_pts,'ro')
-        ax1.axis(xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING, ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING)
+        ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
+                    ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         fig.colorbar( ax1.pcolormesh(x_mesh,y_mesh,intensity2DArr), ax=ax1 )
 
         # SLOPE HEATMAP OUTPUT
@@ -412,7 +412,8 @@ if __name__ == '__main__':
         ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
 
         # plot axes and legend
-        ax2.axis(xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING, ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING)
+        ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
+                    ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         ax2.legend(['Greedy', 'A*'])
         fig.colorbar( ax2.pcolormesh(x_mesh, y_mesh, slope), ax=ax2 )
         plt.show()
