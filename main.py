@@ -40,7 +40,7 @@ XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
 YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
