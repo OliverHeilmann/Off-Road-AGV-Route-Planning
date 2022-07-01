@@ -234,9 +234,9 @@ boundingObject USE TERRAIN_MAP
 
         # put all waypoints into string and adjust for elevation map offset in WeBots
         wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
-                                                str(el[1] + YTRANSLATE + YSPACING),
-                                                str(round(elev[el[1]+CORNER_SIZE][el[0]+CORNER_SIZE] + VEHICLE_HEIGHT/2,4)))
-                                                for el in wpts] )
+                                                        str(el[1] + YTRANSLATE + YSPACING),
+                                                        str(round(elev[el[1]-1][el[0]-1] + VEHICLE_HEIGHT/2,4)))
+                                                        for el in wpts] )
 
         # structure of .wbo file
         formatted =  """Vehicle Config File
