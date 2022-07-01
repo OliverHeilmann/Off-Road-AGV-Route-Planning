@@ -27,3 +27,5 @@ WeBots Python doesn't currently support Arm86 architectures. Despite setting Pyt
 # Notes
 1) Make sure that the correct paths to elevationmap_vehicle_config.txt are in moose_path_following_mod and supervisor_draw_trail_mod!
 2) If you get errors in any C scripts it might be to do with reaching the maximum memory allocation for waypoints. Change MAXIMUM_NUMBER_OF_COORDINATES to a larger number and recompile this (inside of WeBots editor using the gear icon) to fix the issue.
+3) CustomAppearance.proto has a file path defined (pointing toward an image in texture folder, make sure it is correct!)
+4) image_map function in Terrain class specifies a file path to the CustomAppearance.png file. Make sure it is the same place as above.
