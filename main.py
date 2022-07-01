@@ -233,15 +233,14 @@ boundingObject USE TERRAIN_MAP
         # loop through land types and find their total coverage areas in pixel count
         total_types = defaultdict( lambda : float )
         for tp in self.landtypes.get_type_keys():
+
+            # if slope type then ignore, we handle this differently
+            if tp == "Slope": total_types[ tp ] = None; break
+
             image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
-            lower, upper = self.landtypes.get_colour_range( tp )        # get colour range
+            lower, upper = self.landtypes.get_colour_range( tp )     # get colour range
             image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
             total_types[ tp ] = cv2.countNonZero(image_mask) #/ (self.image.size/4)   # ratio of colour to whole image
-            
-            # cv2.imshow( "Source", self.image)
-            # cv2.imshow( "Mask", image_mask)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
 
         # Loop through all the grid squares and calculate the normalised values per terrain type
         temp = np.zeros([len(total_types),self.imageMap.size])  # numpy array for storing the land type coverage areas
@@ -249,46 +248,33 @@ boundingObject USE TERRAIN_MAP
         for iy, ix in np.ndindex(self.imageMap.shape):
             row = 0  
             for tp in self.landtypes.get_type_keys():
-                image_hsv = cv2.cvtColor(  self.imageMap[iy, ix], cv2.COLOR_BGR2HSV )   # get hsv of grid
-                lower, upper = self.landtypes.get_colour_range( tp )            # get colour range
-                image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
-                temp[row, col] = cv2.countNonZero( image_mask ) / total_types[ tp ]    # ratio of colour in grid to colour in img
+                if tp == "Slope":
+                    temp[row, col] = self.slopeMap[iy, ix]
+                else:
+                    image_hsv = cv2.cvtColor( self.imageMap[iy, ix], cv2.COLOR_BGR2HSV )   # get hsv of grid
+                    lower, upper = self.landtypes.get_colour_range( tp )            # get colour range
+                    image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
+                    temp[row, col] = cv2.countNonZero( image_mask ) / total_types[ tp ]    # ratio of colour in grid to colour in img
                 row += 1
             col += 1
 
         # normalise the large array of temp results, then check sum to ~1.
-        result = pow(temp / np.linalg.norm(temp, axis=-1)[:, np.newaxis], 2)
+        result = pow( temp / np.linalg.norm(temp, axis=-1)[:, np.newaxis], 2 )
         check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
 
-        print(1)
+        if check:
+            # loop through all the grid squares and calculate their land type coverage areas
+            self.larea = np.full( self.imageMap.shape, 0.0, dtype=object )
+            print("OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            # for iy, ix in np.ndindex(self.imageMap.shape):
 
-        # loop through all the grid squares and calculate their land type coverage areas
-        # self.larea = np.full( self.imageMap.shape, 0.0, dtype=object )
+            #     # get the class values, use the IOP equation to calculate the IOP values...
 
-        # add all the areas to the total array
-        # self.larea[iy, ix] = 1
-
-        # # loop through all the grid squares and calculate their land type coverage areas
-        # self.larea = np.full( self.imageMap.shape, 0.0, dtype=object )
-
-        # # numpy array for storing the land type coverage areas
-        # store = np.zeros([len(total_types),self.imageMap.size])
-
-        # for iy, ix in np.ndindex(self.imageMap.shape):
-            
-        #     arr = np.zeros(len(total_types))
-        #     incr = 0
-            
-            
-        #     for tp in self.landtypes.get_type_keys():
-        #         image_hsv = cv2.cvtColor(  self.imageMap[iy, ix], cv2.COLOR_BGR2HSV )   # get hsv of grid
-        #         lower, upper = self.landtypes.get_colour_range( tp )            # get colour range
-        #         image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
-        #         arr[incr] = cv2.countNonZero( image_mask ) / total_types[ tp ]    # ratio of colour in grid to colour in img
-        #         incr += 1
-            
-        #     # add all the areas to the total array
-        #     self.larea[iy, ix] = arr
+            #     # add all the areas to the total array
+            #     self.larea[iy, ix] = 1
+        else:
+            raise ValueError("[ERROR]: Normalised values do not sum to one. Check colour ranges are" +  \
+                                        "appropriate perhaps increasing the range will fix the issue)." )
 
 
     def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):

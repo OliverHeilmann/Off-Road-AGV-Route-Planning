@@ -10,13 +10,16 @@ import numpy as np
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
     def __init__( self, ):
-        # outline colours and their ranges
-        self.classes = {"Firebrake" : [ [0, 0, 56], [-15, -15, 16], [15, 15, 96] ],
-                        "Open Area" : [ [56, 106, 255], [41, 91, 215], [71, 121, 295] ],
-                        "River"     : [ [84, 165, 255], [69, 150, 215], [99, 180, 295] ],    
-                        "Swamp"     : [ [10, 198, 240], [-5, 183, 200], [25, 213, 280] ],
-                        "Forest"    : [ [66, 255, 118], [51, 240, 78], [81, 270, 158] ],
-                        "Orchard"   : [ [164, 81, 212], [149, 66, 172], [179, 96, 252] ],
+        # outline colours and their ranges as [type : [mid, lower, upper, VRF]]
+        # where VRF is the vegetation roughness factor, an indiction of the 
+        # velocity a vehicle can pass through the terrain type.
+        self.classes = {"Firebrake" : [ [0, 0, 56]    , [-15, -15, 16], [15, 15, 96]  ,  0.3],
+                        "Open Area" : [ [56, 106, 255], [41, 91, 215] , [71, 121, 295],  0.5],
+                        "River"     : [ [84, 165, 255], [69, 150, 215], [99, 180, 295],  -1.0],    
+                        "Swamp"     : [ [10, 198, 240], [-5, 183, 200], [25, 213, 280],  -0.8],
+                        "Forest"    : [ [66, 255, 118], [51, 240, 78] , [81, 270, 158],  -0.8],
+                        "Orchard"   : [ [164, 81, 212], [149, 66, 172], [179, 96, 252],  -0.5],
+                        "Slope"     : [ [            ], [            ], [            ],  -0.4],
                         }
     def get_type_keys( self ):
         """Return all land type keys as a list of strings."""
@@ -28,7 +31,7 @@ class LandTypes:
     
     def get_colour_range( self, key : str ):
         """Return colours a numpy array of structure [lower, upper]."""
-        return np.array( self.classes[ key ][1:] )
+        return np.array( self.classes[ key ][1:3] )
 
     def __str__( self ):
         """Return the terrain classes as list of keys."""
