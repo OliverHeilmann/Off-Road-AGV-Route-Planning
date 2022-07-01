@@ -36,21 +36,21 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 8    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 8   # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 128   # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 15    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -round((XDIMENSION-1)*XSPACING / 2.)   # Offset for terrain in x dir
 YTRANSLATE = -round((YDIMENSION-1)*YSPACING / 2.)   # Offset for terrain in y dir
-ZTRANSLATE = 0                                  # Offset for terrain in z dir
+ZTRANSLATE = 0                                      # Offset for terrain in z dir
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 4             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
+PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -189,8 +189,8 @@ boundingObject USE TERRAIN_MAP
         cv2.imwrite("webots_moose/protos/textures/TerrainFeaturesScaled.png", rgba)
         
         # calculate segment size in pixels
-        M = row//pixelRes
-        N = col//pixelRes
+        M = row//(YDIMENSION-1)
+        N = col//(XDIMENSION-1)
         
         # get tiles in format/ sequence shown below:
         #     y
@@ -321,6 +321,12 @@ if __name__ == '__main__':
          WeBots will reformat the image dimensions when applied onto the terrain. As the calculations
          for terrain passability require equal and accurate grid squares, a reformatting of the image
          shape would lead to inaccurate estimations of path costs.\n\n""")
+    else:
+        # Otherwise add 1 to each value so that grid squares = nodes - 1 (needed to scale image size in Webots)
+        XDIMENSION += 1; YDIMENSION += 1
+
+        # silently make sure pixel resolution is greater or equal to grid resolution
+        PIXEL_RESOLUTION = XDIMENSION if PIXEL_RESOLUTION < XDIMENSION else PIXEL_RESOLUTION
        
     if ADD_NOISE:
         samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
@@ -339,7 +345,7 @@ if __name__ == '__main__':
     (x_mesh, y_mesh), intensity2DArr = terrain.elevation_map( x_pts, y_pts )
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
-    # _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
+    _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
 
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
