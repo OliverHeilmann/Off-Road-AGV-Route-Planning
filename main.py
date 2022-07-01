@@ -26,7 +26,6 @@ import cv2
 sys.path.append('./search')     # add 'search' directory to path
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
-# from maps.terrain import Terrain
 from scipy import stats
 
 ############################## SETUP ###################################
@@ -37,56 +36,49 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 8    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 8   # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 15    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1            # Number of corners to ignore for path planning (to not fall off edge of map)
 
-XTRANSLATE = -round(XDIMENSION*XSPACING / 2.)   # Offset for terrain in x dir
-YTRANSLATE = -round(YDIMENSION*YSPACING / 2.)   # Offset for terrain in y dir
+XTRANSLATE = -round((XDIMENSION-1)*XSPACING / 2.)   # Offset for terrain in x dir
+YTRANSLATE = -round((YDIMENSION-1)*YSPACING / 2.)   # Offset for terrain in y dir
 ZTRANSLATE = 0                                  # Offset for terrain in z dir
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
-APPEARANCE = "CustomAppearance"     # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1
+APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
+PIXEL_RESOLUTION = 4             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+x_pts = []#[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = []#[10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True   # include additional noise?
+ADD_NOISE = False   # include additional noise?
 SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
 class Terrain:
     """Terrain class holds all functions relating to terrain generation."""
-    def __init__( self, params):
-        self.params = params
-
-        # self.featureMap = defaultdict(lambda : {f:v for f, v in zip(["elevation", "slope", "image", "larea", "iop"],
-        #                                                             [     0,         0,      [],         [],    0 ])})
+    def __init__( self, *args, **kwargs ):
         self.x_mesh = list
         self.y_mesh = list
         self.elevationMap = np.ndarray
-
         self.slopeMap = np.ndarray
-
+        self.image = np.ndarray
         self.imageMap = np.ndarray
-
         self.larea = np.ndarray
-        
         self.iop = np.array  
 
     def kde_quartic( self, d, H ):
         """Function to calculate intensity with quartic kernel."""
         dn=d/H
-        P=(15/16)*(1-dn**2)**2
-        return P
+        return (15/16)*(1-dn**2)**2
 
     def elevation_map( self, xs : list, ys : list ):
         """Take input points and return an intensity map as a 2D numpy array."""
@@ -183,16 +175,22 @@ boundingObject USE TERRAIN_MAP
                 self.slopeMap[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
         return self.slopeMap
 
-    def image_map( self, imageDir = "webots_moose/protos/textures/CustomAppearance.png", size = 2048 ):
+    def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, check = False ):
         """Divide terrain image into same number of grid squares as other terrain features."""
         # Load an color image in BGR, reformat and get key params
-        img = cv2.imread( imageDir )
-        img = cv2.resize(img, (size, size), interpolation = cv2.INTER_AREA)
-        row, col, _ = img.shape
+        self.image = cv2.imread( imageDir, cv2.IMREAD_UNCHANGED )
+        self.image = cv2.resize( self.image, (pixelRes, pixelRes), interpolation = cv2.INTER_AREA )
+        row, col, _ = self.image.shape
+        
+        # add alpha channel to image so that WeBots doesn't perform image interpolation
+        rgba = cv2.cvtColor( self.image, cv2.COLOR_RGB2RGBA )
+
+        # resave image to correct dimensions for WeBots simulator
+        cv2.imwrite("webots_moose/protos/textures/TerrainFeaturesScaled.png", rgba)
         
         # calculate segment size in pixels
-        M = row//YDIMENSION
-        N = col//XDIMENSION
+        M = row//pixelRes
+        N = col//pixelRes
         
         # get tiles in format/ sequence shown below:
         #     y
@@ -206,33 +204,37 @@ boundingObject USE TERRAIN_MAP
         self.imageMap = np.zeros( (YDIMENSION, XDIMENSION) , dtype=object)
         for rn, r in enumerate(range(row,0,-M)):
             for cn, c in enumerate(range(0,col,N)):
-                self.imageMap[rn][cn] = img[r-M:r, c:c+N]
+                self.imageMap[rn][cn] = self.image[r-M:r, c:c+N]
 
         # check segmentation has worked...
-        # cv2.imshow( 'Main', img )
-        # for row in self.imageMap:
-        #     for col in row:
-        #         cv2.imshow( 'Tile', col )
-        #         cv2.waitKey(0)
-        #         cv2.destroyWindow("Tile")
-        # cv2.destroyAllWindows()
+        if check:
+            cv2.imshow( 'Main', self.image )
+            for row in self.imageMap:
+                for col in row:
+                    cv2.imshow( 'Tile', col )
+                    cv2.waitKey(0)
+                    cv2.destroyWindow("Tile")
+            cv2.destroyAllWindows()
         return self.imageMap
 
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
+
+
+
         pass
 
     def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):
         """Save key Webots startup information in text file for C code."""
 
         # calculate translation values
-        tx = str(wpts[0][0] - ((XDIMENSION*XSPACING)/2) + XSPACING)
-        ty = str(wpts[0][1] - ((YDIMENSION*YSPACING)/2) + YSPACING)
+        tx = str(wpts[0][0] - (((XDIMENSION-1)*XSPACING)/2) + XSPACING)
+        ty = str(wpts[0][1] - (((YDIMENSION-1)*YSPACING)/2) + YSPACING)
         tz = str(elev[int(wpts[0][0]/XSPACING)][int(wpts[0][1]/YSPACING)] + VEHICLE_HEIGHT/2)
 
         # put all waypoints into string and adjust for elevation map offset in WeBots
-        wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] - ((XDIMENSION*XSPACING)/2) + XSPACING),
-                                                        str(el[1] - ((YDIMENSION*YSPACING)/2) + YSPACING),
+        wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] - (((XDIMENSION-1)*XSPACING)/2) + XSPACING),
+                                                        str(el[1] - (((YDIMENSION-1)*YSPACING)/2) + YSPACING),
                                                         str(round(elev[int(el[1]/XSPACING)][int(el[0]/YSPACING)] + VEHICLE_HEIGHT/2,4)))
                                                         for el in wpts] )
 
@@ -333,8 +335,11 @@ if __name__ == '__main__':
     terrain = Terrain( 1 )
 
     # Create intensity 2D numpy array using user defined params
-    print("[INFO]: Creating Intensity Map...")
+    print("[INFO]: Creating Elevation Map...")
     (x_mesh, y_mesh), intensity2DArr = terrain.elevation_map( x_pts, y_pts )
+
+    print("[INFO]: Dividing Terrain Image into Grid Squares...")
+    # _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
 
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
@@ -358,8 +363,8 @@ if __name__ == '__main__':
                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     # shift results to account for lambda border clipping step shown above
-    solutionRoute_greedy = np.array(solutionRoute_greedy) + CORNER_SIZE
-    solutionRoute_astar = np.array(solutionRoute_astar) + CORNER_SIZE
+    solutionRoute_greedy = np.array(solutionRoute_greedy)
+    solutionRoute_astar = np.array(solutionRoute_astar)
 
     # if a path exists then continue
     if solutionRoute_greedy.any() and solutionRoute_astar.any():
