@@ -24,10 +24,12 @@ import numpy as np
 import math
 import random
 import cv2
+
+from scipy import stats
 from maps.landtypes import LandTypes
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
-from scipy import stats
+from collections import defaultdict
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
@@ -228,11 +230,19 @@ boundingObject USE TERRAIN_MAP
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
 
-        self.image
-        self.imageMap
-
-
-        pass
+        # loop through land types and find their total coverage areas, append to a list
+        types = defaultdict( lambda : float )
+        for tp in self.landtypes.get_type_keys():
+            image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
+            lower, upper = self.landtypes.get_colour_range( tp )        # get colour range
+            image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
+            types[ tp ] = cv2.countNonZero(image_mask) / (self.image.size/4)   # ratio of colour to whole image
+            
+            # cv2.imshow( "Source", self.image)
+            # cv2.imshow( "Mask", image_mask)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+        print(1)
 
     def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):
         """Save key Webots startup information in text file for C code."""
