@@ -33,7 +33,7 @@ from scipy import stats
 MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
-RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower val ∝ less waypoints)
+RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
 XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
@@ -46,7 +46,7 @@ XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
-USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
@@ -374,8 +374,9 @@ if __name__ == '__main__':
     if solutionRoute_greedyIndex and solutionRoute_astarIndex:
         # shift results to account for lambda border clipping step shown above. Also modify
         # results to show solution in absolute coordinates rather than index values of the input
-        solutionRoute_greedy = (np.array(solutionRoute_greedyIndex) + (CORNER_SIZE-1)) * XSPACING
-        solutionRoute_astar  = (np.array(solutionRoute_astarIndex ) + (CORNER_SIZE-1)) * XSPACING
+        transform_to_webots = lambda the_list : (np.array(the_list) + (CORNER_SIZE-1)) * XSPACING
+        solutionRoute_greedy = transform_to_webots( solutionRoute_greedyIndex )
+        solutionRoute_astar  = transform_to_webots( solutionRoute_astarIndex  )
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]
