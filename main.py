@@ -201,19 +201,22 @@ boundingObject USE TERRAIN_MAP
         #   (0,0)–––––––––––––––––> x
         # imgMap is a 2D array with the corresponding image section contained within
         # e.g. imgMap[0][0] would contain an image of size MxN pixels
-        self.imageMap = np.zeros( (YDIMENSION, XDIMENSION) , dtype=object)
+        self.imageMap = np.zeros( (YDIMENSION-1, XDIMENSION-1) , dtype=object)
         for rn, r in enumerate(range(row,0,-M)):
             for cn, c in enumerate(range(0,col,N)):
                 self.imageMap[rn][cn] = self.image[r-M:r, c:c+N]
 
         # check segmentation has worked...
         if check:
+            cv2.namedWindow('Main', cv2.WINDOW_NORMAL)
+            cv2.namedWindow('Tile', cv2.WINDOW_NORMAL)
             cv2.imshow( 'Main', self.image )
+            cv2.resizeWindow('Main', 250, 250 )
             for row in self.imageMap:
                 for col in row:
                     cv2.imshow( 'Tile', col )
+                    cv2.resizeWindow('Tile', 250, 250 )
                     cv2.waitKey(0)
-                    cv2.destroyWindow("Tile")
             cv2.destroyAllWindows()
         return self.imageMap
 
