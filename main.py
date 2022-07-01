@@ -39,8 +39,8 @@ RSQ_THRESHOLD = 0.999999    # R-Squared value for determining waypoints (lower v
 XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
 YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 4            # Number of corners to ignore for path planning (to not fall off edge of map)
+XSPACING = YSPACING = 2    # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 7            # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
@@ -58,7 +58,24 @@ H = 10    # Radius (h) defines how much affect each point has to KDE (higher H i
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True   # include additional noise?
+x_pts.extend([125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
+            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
+            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
+            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
+            105, 105, 105, 105, 105, 115, 115, 115, 115,115, 115]) # seed x points for elevation locations
+x_pts.extend([125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,\
+            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125,
+            125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,125, 125]) # seed x points for elevation locations
+y_pts.extend([115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
+            165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200,
+            15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 30, 30, 45, 45, 45, 45, 45, 45, 55, 55, 55, 55,
+            65, 65, 65, 65, 65, 90, 90, 90, 90, 90, 90, 90, 90, 90, 100, 100, 100, 100, 100, 100, 100, 100,
+            160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160]) # seed y points for elevation locations
+y_pts.extend([115, 115, 115, 115, 115, 115, 130, 130, 130, 130, 130, 130, 145, 145, 145, 145, 145, 145, 155, 155, 155, 155,\
+            165, 165, 165, 165, 165, 190, 190, 190, 190, 190, 190, 190, 190, 190, 200, 200, 200, 200, 200, 200, 200, 200,
+            15, 15, 15, 15, 15, 15, 30, 30, 30, 30, 30, 30, 45, 45, 45, 45, 45, 45, 55, 55, 55, 55]) # seed y points for elevation locations
+
+ADD_NOISE = False   # include additional noise?
 SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
@@ -227,15 +244,16 @@ boundingObject USE TERRAIN_MAP
     def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):
         """Save key Webots startup information in text file for C code."""
 
-        # calculate translation values
+        # calculate translation values for vehicle (WeBots coordinate system)
         tx = str(wpts[0][0] + XTRANSLATE + XSPACING)
         ty = str(wpts[0][1] + YTRANSLATE + YSPACING)
-        tz = str(elev[0][0] + VEHICLE_HEIGHT/2)
+        tz = str(elev[CORNER_SIZE][CORNER_SIZE] + VEHICLE_HEIGHT/2)
 
         # put all waypoints into string and adjust for elevation map offset in WeBots
+        index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
         wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
                                                         str(el[1] + YTRANSLATE + YSPACING),
-                                                        str(round(elev[el[1]-1][el[0]-1] + VEHICLE_HEIGHT/2,4)))
+                                                        str(round(elev[ index(el[1]) ][ index(el[0]) ] + VEHICLE_HEIGHT/2,4)))
                                                         for el in wpts] )
 
         # structure of .wbo file
@@ -356,23 +374,25 @@ if __name__ == '__main__':
     slope = terrain.slope_map( intensity2DArr )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
-    # # Don't pass border values as their slopes are not accurate due to kerneling method
+    # Don't pass border values as their slopes are not accurate due to kerneling method. 
+    # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
     clip = lambda array : array[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
-    solutionRoute_greedy = greedyRoute3D(   clip(intensity2DArr),     # map_array of heights
+    solutionRoute_greedyIndex = greedyRoute3D(  clip(intensity2DArr),     # map_array of heights
+                                                clip(slope),              # array of slope angles
+                                                maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                                gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+
+    solutionRoute_astarIndex = astarRoute3D(clip(intensity2DArr),     # map_array of heights
                                             clip(slope),              # array of slope angles
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    solutionRoute_astar = astarRoute3D( clip(intensity2DArr),     # map_array of heights
-                                        clip(slope),              # array of slope angles
-                                        maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
-                                        gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
-
-    # if a path exists then continue
-    if solutionRoute_greedy and solutionRoute_astar:
-        # shift results to account for lambda border clipping step shown above
-        solutionRoute_greedy = np.array(solutionRoute_greedy) + (CORNER_SIZE-1)*XSPACING
-        solutionRoute_astar = np.array(solutionRoute_astar) + (CORNER_SIZE-1)*XSPACING
+    # if a path exists then continue...
+    if solutionRoute_greedyIndex and solutionRoute_astarIndex:
+        # shift results to account for lambda border clipping step shown above. Also modify
+        # results to show solution in absolute coordinates rather than index values of the input
+        solutionRoute_greedy = (np.array(solutionRoute_greedyIndex) + (CORNER_SIZE-1)) * XSPACING
+        solutionRoute_astar  = (np.array(solutionRoute_astarIndex ) + (CORNER_SIZE-1)) * XSPACING
 
         # Make set of waypoints for vehicle based on solution
         # Returns as [ (x1,y1), (x2,y2) ... ]

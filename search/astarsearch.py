@@ -7,7 +7,7 @@ Modified from ...
 """
 import time
 import numpy as np
-from math import sqrt
+from math import sqrt, pow
 from priorityqueue import PriorityQueue
 
 class Node:
@@ -77,13 +77,13 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
     # f(n) = g(n) + h(n) where h(n) is the straight line distance to the goal from current point
     # and g(n) is the total cost already accumulated called path_cost (from start) - written as 
     # lambda expression
-    f_n = lambda node : node.path_cost + sqrt(  abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
-                                                abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
-                                                abs( maze[goal] - maze[node.state] ))
+    f_n = lambda node : node.path_cost + sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +    \
+                                                pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +    \
+                                                pow( maze[goal] - maze[node.state], 2 ))
     
-    g_step = lambda node : sqrt(abs( (node.state[0] - node.parent.state[0]) * gridsize[0] ) +   \
-                                abs( (node.state[1] - node.parent.state[1]) * gridsize[1] ) +   \
-                                abs( maze[node.state] - maze[node.parent.state] ))
+    g_step = lambda node : sqrt(pow( (node.state[0] - node.parent.state[0]) * gridsize[0], 2 ) +   \
+                                pow( (node.state[1] - node.parent.state[1]) * gridsize[1], 2 ) +   \
+                                pow( maze[node.state] - maze[node.parent.state], 2 ))
 
     frontier = Frontier( f_n, Node(state = start, actual_cost_func=g_step) )
     explored = set()
@@ -129,10 +129,10 @@ def total_distance( route, maze, gridsize ):
     for step in route:
         # update to newest value, then perform distance calc between curr and nxt
         nxt = step  
-        total += sqrt(  abs((nxt[0] - curr[0]) * gridsize[0] ) +   \
-                        abs((nxt[1] - curr[1]) * gridsize[1] ) +   \
-                        abs(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] - \
-                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])] ))
+        total += sqrt(  pow((nxt[0] - curr[0]) * gridsize[0], 2 ) +   \
+                        pow((nxt[1] - curr[1]) * gridsize[1], 2 ) +   \
+                        pow(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] -        \
+                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])], 2))
         curr = step
     return round(total,2)
 
@@ -159,13 +159,13 @@ def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gr
 
             # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
             state = node.state
-            solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
+            solution.append( [state[1], state[0]] )
             steps += 1
             node = node.parent
 
         # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
         state = node.state
-        solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
+        solution.append( [state[1], state[0]] )
         
         print(f"    Total steps on path: {steps}")
         print(f"    Total states explored: {number_explored}")

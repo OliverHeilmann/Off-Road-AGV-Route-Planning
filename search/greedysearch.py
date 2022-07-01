@@ -70,9 +70,9 @@ def greedy_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(
 
     # here's our euclidean distance heurstic in 3D space, as a lambda expression
     # f(n) = h(n) where h(n) is the straight line distance to the goal from current point
-    heuristic = lambda node: sqrt(  abs( (goal[0] - node.state[0]) * gridsize[0] ) +    \
-                                    abs( (goal[1] - node.state[1]) * gridsize[1] ) +    \
-                                    abs( maze[goal] - maze[node.state] ))
+    heuristic = lambda node: sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +    \
+                                    pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +    \
+                                    pow( maze[goal] - maze[node.state], 2 ))
 
     frontier = Frontier(heuristic, Node(start))
     explored = set()
@@ -118,10 +118,10 @@ def total_distance( route, maze, gridsize ):
     for step in route:
         # update to newest value, then perform distance calc between curr and nxt
         nxt = step  
-        total += sqrt(  abs((nxt[0] - curr[0]) * gridsize[0] ) +   \
-                        abs((nxt[1] - curr[1]) * gridsize[1] ) +   \
-                        abs(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] - \
-                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])] ))
+        total += sqrt(  pow((nxt[0] - curr[0]) * gridsize[0], 2 ) +   \
+                        pow((nxt[1] - curr[1]) * gridsize[1], 2 ) +   \
+                        pow(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] -        \
+                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])], 2))
         curr = step
     return round(total,2)
 
@@ -145,13 +145,13 @@ def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, g
         while node.parent is not None:
             # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
             state = node.state
-            solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
+            solution.append( [state[1], state[0]] )
             steps += 1
             node = node.parent
 
         # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
         state = node.state
-        solution.append( [state[1]*gridsize[0], state[0]*gridsize[1]] )
+        solution.append( [state[1], state[0]] )
         
         print(f"    Total steps on path: {steps}")
         print(f"    Total states explored: {number_explored}")
