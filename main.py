@@ -16,14 +16,15 @@ Description:
 
 By Oliver Heilmann
 """
+import sys
+sys.path.append('./search')     # add 'search' directory to path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 import random
-import sys
 import cv2
-
-sys.path.append('./search')     # add 'search' directory to path
+from maps.landtypes import LandTypes
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
 from scipy import stats
@@ -63,9 +64,13 @@ SAMPLES = 85       # Number of additional random samples used to generate heat m
 
 #######################################################################
 
-class Terrain:
+class Terrain( LandTypes ):
     """Terrain class holds all functions relating to terrain generation."""
     def __init__( self, *args, **kwargs ):
+        # create object of inherited land type class
+        self.landtypes = LandTypes()
+
+        # prepare to store values, create variable names
         self.x_mesh = list
         self.y_mesh = list
         self.elevationMap = np.ndarray
@@ -223,6 +228,8 @@ boundingObject USE TERRAIN_MAP
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
 
+        self.image
+        self.imageMap
 
 
         pass
@@ -358,6 +365,10 @@ if __name__ == '__main__':
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
     slope = terrain.slope_map( intensity2DArr )
+
+    # Index of Passability generation
+    print("[INFO]: Calculating Index of Passability...")
+    _ = terrain.iop_map( )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
