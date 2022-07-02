@@ -50,7 +50,7 @@ class Tile( LandTypes ):
         self.slope = float
         self.image = np.ndarray
         self.iop = float
-
+    
     def traitCoverage( self, land_class : str ):
         """Check coverage area of land class, return value between 0 and 1."""
         image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
@@ -68,7 +68,7 @@ class Tile( LandTypes ):
         
     def __str__( self ):
         """Returns all the trait variable names and their values."""
-        return vars( self )
+        return f"{ vars( self ) }"
 
 
 if __name__ == "__main__":
