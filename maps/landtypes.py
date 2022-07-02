@@ -22,12 +22,21 @@ class LandTypes:
                         "Orchard"   : [ [164, 81, 212], [149, 66, 172], [179, 96, 252],  -0.5],
                         "Slope"     : [ [            ], [            ], [            ],  -0.4],
                         }
-    def get_type_keys( self ):
+    def get_type_keys( self, drop = None ):
         """Return all land type keys as a list of strings."""
-        return list(self.classes.keys())
+        keys = list(self.classes.keys())
+        if drop: keys.remove( drop )
+        return keys
+
+    def get_mid_mtlb( self, key : str ):
+        """Return the mid colour of key as tuple of floats in range 0 to 1."""
+        r = self.classes[key][0][0] / 255.
+        g = self.classes[key][0][1] / 255.
+        b = self.classes[key][0][2] / 255.
+        return  (r, g, b)
 
     def get_type_info( self, key : str ):
-        """Return colours a list of structure [mid, lower, upper]."""
+        """Return colours a list of structure [mid, lower, upper, VRF]."""
         return self.classes[ key ]
     
     def get_colour_range( self, key : str ):
@@ -49,8 +58,8 @@ class Tile( LandTypes ):
         self.elevation = float
         self.slope = float
         self.image = np.ndarray
-        self.iop = float
-    
+        self.iop = 0
+
     def traitCoverage( self, land_class : str ):
         """Check coverage area of land class, return value between 0 and 1."""
         image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
@@ -74,5 +83,4 @@ class Tile( LandTypes ):
 if __name__ == "__main__":
     tile = Tile()
     land_types = LandTypes()
-    print( land_types.get_colour( "Firebrake" ) )
     print(land_types)

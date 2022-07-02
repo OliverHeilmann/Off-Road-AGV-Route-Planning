@@ -243,6 +243,14 @@ boundingObject USE TERRAIN_MAP
                     cv2.waitKey(0)
             cv2.destroyAllWindows()
 
+    def normalise( self, arr2D : np.ndarray ):
+        """Normalise the large array of temp results, then check sum to ~1."""
+        result = pow( arr2D / np.linalg.norm(arr2D, axis=-1)[:, np.newaxis], 2 )
+        result = np.nan_to_num( result, nan=1.0/result.shape[1] )  # replace NaNs with value summing to 1.
+        check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
+        return result, check
+
+
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
 
@@ -273,29 +281,23 @@ boundingObject USE TERRAIN_MAP
                 row += 1
             col += 1
 
-        # normalise the large array of temp results, then check sum to ~1.
-        result = pow( temp / np.linalg.norm(temp, axis=-1)[:, np.newaxis], 2 )
-        result = np.nan_to_num( result, nan=1.0/result.shape[1] )  # replace NaNs with value summing to 1.
-        check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
+        # Normalise results...
+        temp, passed = self.normalise( temp )
 
-        if check:
-            # loop through all the grid squares and calculate their land type coverage areas
-            self.larea = np.full( self.tiles.shape, 0.0, dtype=object )
-            print("OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        if passed:
+            # loop through tile objects and calculate their IOP values
+            for col, tile in enumerate(np.nditer( self.tiles, flags=['refs_ok'] )):
+                tile = tile.tolist()    # make accessible
 
-            """To Do:
-            1) We have all the normalised results for grid squares, now we need to calculate IOP using the equation
-                and the VRF values.
-            2) Add each of them to the self.iop result 2d array (can use lambda function to keep code clean)
-            3) Plot the results on a heatmap to check it looks reasonable
-            """
-
-            # for iy, ix in np.ndindex(self.tiles.shape):
-
-            #     # get the class values, use the IOP equation to calculate the IOP values...
-
-            #     # add all the areas to the total array
-            #     self.larea[iy, ix] = 1
+                # loop through land class types
+                for row, tp in enumerate(self.get_type_keys()):
+                    vrf = tile.get_type_info( tp )[-1]  # vegetation roughness factor
+                    tile.iop += temp[row, col] * vrf    # sum values into iop tile trait
+            
+            # min_iop = min([obj.iop for row in self.tiles for obj in row])
+            # iops_shift = [obj.iop+abs(min_iop) for row in self.tiles for obj in row]
+            iops = [obj.iop for row in self.tiles for obj in row]
+            return np.array(iops).reshape(-1, XDIMENSION-1)   # return 2D array of iops
         else:
             raise ValueError("[ERROR]: Normalised values do not sum to one. Check colour ranges are" +  \
                                         "appropriate perhaps increasing the range will fix the issue)." )
@@ -423,7 +425,7 @@ if __name__ == '__main__':
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
-    _ = terrain.iop_map( )
+    iop2dArr = terrain.iop_map( )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -464,30 +466,48 @@ if __name__ == '__main__':
         x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
 
         # HEADER
-        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
         fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Vehicle Max Slope: {MAX_SLOPE_ANGLE} [rad])', fontsize=16)
         
-        # ELEVATION HEATMAP OUTPUT
+        ##### ELEVATION HEATMAP OUTPUT #####
         ax1.set(title="Elevation Heatmap")
         ax1.plot(x_pts,y_pts,'ro')
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         fig.colorbar( ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners), ax=ax1 )
 
-        # SLOPE HEATMAP OUTPUT
+        ##### SLOPE HEATMAP OUTPUT #####
         ax2.set(title="Slope Heatmap")
-
         # plot Greedy
         ax2.plot(x_rt_greedy, y_rt_greedy,'g-')
         ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
         # plot A* 
         ax2.plot(x_rt_astar, y_rt_astar,'r-')
         ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
-
         # plot axes and legend
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         ax2.legend(['Greedy', 'A*'])
         fig.colorbar( ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope), ax=ax2 )
+        
+        ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
+        ax3.set(title="Terrain Image")
+        ax3.imshow( np.flip(cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB),axis=-1) )
+        # plot empty data and show key of colours and respective classes
+        [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
+                                    for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
+        # ax3.legend()
+
+        ##### IOP HEATMAP OUTPUT #####
+        ax4.set(title="IOP Heatmap")
+        # plot Greedy
+        ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
+        ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+        # plot A* 
+        ax4.plot(x_rt_astar, y_rt_astar,'r-')
+        ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+        ax4.legend(['Greedy', 'A*'])
+        fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, iop2dArr), ax=ax4 )
+
         plt.show()
         ###################################################
