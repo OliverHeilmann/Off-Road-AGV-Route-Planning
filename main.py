@@ -39,8 +39,8 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 16    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 16    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 2            # Number of corners to ignore for path planning (to not fall off edge of map)
@@ -62,7 +62,7 @@ x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
 ADD_NOISE = False   # include additional noise?
-SAMPLES = 85       # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 85        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -81,17 +81,13 @@ class Terrain( Tile, LandTypes ):
         # prepare to store values, create variable names
         self.x_mesh = list
         self.y_mesh = list
-        self.elevationNodeMap = np.ndarray
-        self.slopeMap = np.ndarray
+        self.elevationCorners = np.ndarray
+        self.slopeCorners = np.ndarray
         self.image = np.ndarray
-        self.imageMap = np.ndarray
-        self.larea = np.ndarray
-        self.iop = np.array  
 
     def kde_quartic( self, d, H ):
         """Function to calculate intensity with quartic kernel."""
-        dn=d/H
-        return (15/16)*(1-dn**2)**2
+        return (15/16)*(1-(d/H)**2)**2
 
     def elevation_map( self, xs : list, ys : list ):
         """Take input points and return an intensity map as a 2D numpy array."""
@@ -104,7 +100,7 @@ class Terrain( Tile, LandTypes ):
         xc=self.x_mesh+(XSPACING/2)
         yc=self.y_mesh+(YSPACING/2)
 
-        self.elevationNodeMap = np.full( (XDIMENSION, YDIMENSION), 0.0 )
+        self.elevationCorners = np.full( (XDIMENSION, YDIMENSION), 0.0 )
         for j in range(len(xc)):
             for k in range(len(xc[0])):
                 kde_value_list=[]
@@ -118,25 +114,25 @@ class Terrain( Tile, LandTypes ):
                     kde_value_list.append(p)
                 # Sum all intensity values
                 p_total=sum(kde_value_list)
-                self.elevationNodeMap[j][k] = p_total
+                self.elevationCorners[j][k] = p_total
         
         # Set border heights to 0 to avoid steep edges in WeBots
-        self.elevationNodeMap[0,:-1] = self.elevationNodeMap[:-1,-1] = self.elevationNodeMap[:-1,0] = self.elevationNodeMap[-1,:-1] = 0
+        self.elevationCorners[0,:-1] = self.elevationCorners[:-1,-1] = self.elevationCorners[:-1,0] = self.elevationCorners[-1,:-1] = 0
 
         # Now we must resize the elevation data by x-1,y-1 before adding to the Tile Class. This is
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct elevation data.
-        elevationCenterMap = cv2.resize( self.elevationNodeMap, (XDIMENSION-1, YDIMENSION-1) )
-        for iy, ix in np.ndindex( elevationCenterMap.shape ):
-            self.tiles[ iy, ix ].elevation = elevationCenterMap[ iy, ix ]               #################################################
-        return (self.x_mesh, self.y_mesh), self.elevationNodeMap
+        elevationNodes = cv2.resize( self.elevationCorners, (XDIMENSION-1, YDIMENSION-1) )
+        for iy, ix in np.ndindex( elevationNodes.shape ):
+            self.tiles[ iy, ix ].elevation = elevationNodes[ iy, ix ]
+        return (self.x_mesh, self.y_mesh), self.elevationCorners
 
-    def wbo_map( self, elevationNodeMap : np.ndarray ):
+    def wbo_map( self, elevationCorners : np.ndarray ):
         """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
 
         # convert numpy array into string format usable by .wbo file format
-        heights = ",".join( [",".join(item) for item in np.round(elevationNodeMap,2).astype(str)] )
+        heights = ",".join( [",".join(item) for item in np.round(elevationCorners,2).astype(str)] )
 
         # structure of .wbo file
         formatted =  """#VRML_OBJ R2022a utf8
@@ -178,27 +174,31 @@ boundingObject USE TERRAIN_MAP
         except:
             raise ValueError('"elevationmap_heatmap.wbo" did not save!')
 
-    def slope_map( self, elev : np.ndarray ):
+    def slope_map( self, elevCnr : np.ndarray ):
         """Calculate the slope map using previously generated terrain elevation data."""
-        rows, cols = elev.shape
-        self.slopeMap = np.zeros([rows, cols])
-        elev = np.pad(elev, 1, mode='symmetric')   # add padding for kernel
+        rows, cols = elevCnr.shape
+        self.slopeCorners = np.zeros([rows, cols])
+        elevCnr = np.pad(elevCnr, 1, mode='symmetric')   # add padding for kernel
         for i in range(1,rows+1):
             for j in range(1,cols+1):
-                slope_we = ((elev[i+1][j-1] + 2*elev[i][j-1] + elev[i-1][j-1]) -    \
-                            (elev[i+1][j+1] + 2*elev[i][j+1] + elev[i-1][j+1]))/    \
+                slope_we = ((elevCnr[i+1][j-1] + 2*elevCnr[i][j-1] + elevCnr[i-1][j-1]) -    \
+                            (elevCnr[i+1][j+1] + 2*elevCnr[i][j+1] + elevCnr[i-1][j+1]))/    \
                             8 * XSPACING
 
-                slope_sn = ((elev[i+1][j+1] + 2*elev[i+1][j] + elev[i+1][j-1]) -    \
-                            (elev[i-1][j+1] + 2*elev[i-1][j] + elev[i-1][j-1]))/    \
+                slope_sn = ((elevCnr[i+1][j+1] + 2*elevCnr[i+1][j] + elevCnr[i+1][j-1]) -    \
+                            (elevCnr[i-1][j+1] + 2*elevCnr[i-1][j] + elevCnr[i-1][j-1]))/    \
                             8 * YSPACING
 
-                self.slopeMap[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
+                self.slopeCorners[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
 
-        slopeCenterMap = cv2.resize( self.slopeMap, (XDIMENSION-1, YDIMENSION-1) )
-        for iy, ix in np.ndindex( slopeCenterMap.shape ):
-            self.tiles[ iy, ix ].slope = slopeCenterMap[ iy, ix ]               #################################################
-        return self.slopeMap
+        # Now we must resize the slope data by x-1,y-1 before adding to the Tile Class. This is
+        # necessary because the number of grid squares is == number of nodes-1. We must interpolate
+        # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
+        # such that the image grid square data corresponds to the correct slope data.
+        slopeNodes = cv2.resize( self.slopeCorners, (XDIMENSION-1, YDIMENSION-1) )
+        for iy, ix in np.ndindex( slopeNodes.shape ):
+            self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
+        return self.slopeCorners
 
     def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, check = False ):
         """Divide terrain image into same number of grid squares as other terrain features."""
@@ -224,14 +224,10 @@ boundingObject USE TERRAIN_MAP
         #     |
         #     |   0,0      0,1
         #   (0,0)–––––––––––––––––> x
-        # imgMap is a 2D array with the corresponding image section contained within
-        # e.g. imgMap[0][0] would contain an image of size MxN pixels
-        self.imageMap = np.zeros( (YDIMENSION-1, XDIMENSION-1), dtype=object )
+        # each tile will receive a 2D array with the corresponding image segment stored
+        # as a 2D array
         for rn, r in enumerate(range(row,0,-M)):
             for cn, c in enumerate(range(0,col,N)):
-                self.imageMap[rn][cn] = self.image[r-M:r, c:c+N]
-
-                # piggyback loop and add to tile objects
                 self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N]                   ##########################################
 
         # check segmentation has worked...
@@ -240,51 +236,51 @@ boundingObject USE TERRAIN_MAP
             cv2.namedWindow('Tile', cv2.WINDOW_NORMAL)
             cv2.imshow( 'Main', self.image )
             cv2.resizeWindow('Main', 250, 250 )
-            for row in self.imageMap:
+            for row in self.tiles:
                 for col in row:
-                    cv2.imshow( 'Tile', col )
+                    cv2.imshow( 'Tile', col.image )
                     cv2.resizeWindow('Tile', 250, 250 )
                     cv2.waitKey(0)
             cv2.destroyAllWindows()
-        return self.imageMap
 
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
 
         # loop through land types and find their total coverage areas in pixel count
-        total_types = defaultdict( lambda : float )
+        total_type_areas = defaultdict( lambda : float )
         for tp in self.get_type_keys():
             # if slope type then ignore, we handle this differently
-            if tp == "Slope": total_types[ tp ] = None; break
+            if tp == "Slope": total_type_areas[ tp ] = None; break
 
             image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
             lower, upper = self.get_colour_range( tp )     # get colour range
             image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
-            total_types[ tp ] = cv2.countNonZero(image_mask) #/ (self.image.size/4)   # ratio of colour to whole image
+            total_type_areas[ tp ] = cv2.countNonZero(image_mask) #/ (self.image.size/4)   # ratio of colour to whole image
 
         # Loop through all the grid squares and calculate the normalised values per terrain type
-        temp = np.zeros([len(total_types),self.imageMap.size])  # numpy array for storing the land type coverage areas
+        temp = np.zeros([len(total_type_areas),self.tiles.size])  # numpy array for storing the land type coverage areas
         col = 0
-        for iy, ix in np.ndindex(self.imageMap.shape):
+        for iy, ix in np.ndindex(self.tiles.shape):
             row = 0  
             for tp in self.get_type_keys():
                 if tp == "Slope":
-                    temp[row, col] = self.slopeMap[iy, ix]
+                    temp[row, col] = self.tiles[iy, ix].slope
                 else:
-                    image_hsv = cv2.cvtColor( self.imageMap[iy, ix], cv2.COLOR_BGR2HSV )   # get hsv of grid
+                    image_hsv = cv2.cvtColor( self.tiles[iy, ix].image, cv2.COLOR_BGR2HSV )   # get hsv of grid
                     lower, upper = self.get_colour_range( tp )            # get colour range
                     image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
-                    temp[row, col] = cv2.countNonZero( image_mask ) / total_types[ tp ]    # ratio of colour in grid to colour in img
+                    temp[row, col] = cv2.countNonZero( image_mask ) / total_type_areas[ tp ]    # ratio of colour in grid to colour in img
                 row += 1
             col += 1
 
         # normalise the large array of temp results, then check sum to ~1.
         result = pow( temp / np.linalg.norm(temp, axis=-1)[:, np.newaxis], 2 )
+        result = np.nan_to_num( result, nan=1.0/result.shape[1] )  # replace NaNs with value summing to 1.
         check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
 
         if check:
             # loop through all the grid squares and calculate their land type coverage areas
-            self.larea = np.full( self.imageMap.shape, 0.0, dtype=object )
+            self.larea = np.full( self.tiles.shape, 0.0, dtype=object )
             print("OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
             """To Do:
@@ -294,7 +290,7 @@ boundingObject USE TERRAIN_MAP
             3) Plot the results on a heatmap to check it looks reasonable
             """
 
-            # for iy, ix in np.ndindex(self.imageMap.shape):
+            # for iy, ix in np.ndindex(self.tiles.shape):
 
             #     # get the class values, use the IOP equation to calculate the IOP values...
 
@@ -303,51 +299,6 @@ boundingObject USE TERRAIN_MAP
         else:
             raise ValueError("[ERROR]: Normalised values do not sum to one. Check colour ranges are" +  \
                                         "appropriate perhaps increasing the range will fix the issue)." )
-
-    def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):
-        """Save key Webots startup information in text file for C code."""
-
-        # calculate translation values for vehicle (WeBots coordinate system)
-        tx = str(wpts[0][0] + XTRANSLATE + XSPACING)
-        ty = str(wpts[0][1] + YTRANSLATE + YSPACING)
-        tz = str(elev[CORNER_SIZE][CORNER_SIZE] + VEHICLE_HEIGHT/2)
-
-        # put all waypoints into string and adjust for elevation map offset in WeBots
-        index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
-        wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
-                                                        str(el[1] + YTRANSLATE + YSPACING),
-                                                        str(round(elev[ index(el[1]) ][ index(el[0]) ] + VEHICLE_HEIGHT/2,4)))
-                                                        for el in wpts] )
-
-        # structure of .wbo file
-        formatted =  """Vehicle Config File
-Vehicle {{
-    translation {} {} {}
-    rotation {} {} {} {}
-    count {}
-    waypoints {}
-}}"""   .format(   tx, ty, tz,
-                    0, 0, -1, -0.85,
-                    str(len(wpts)),
-                    wpts_string,
-                )
-        # Save waypoints as text file usable in WeBots
-        try:
-            with open('maps/elevationmap_vehicle_config.txt', "w") as f:
-                f.write( formatted )
-                f.close()
-        except:
-            raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
-
-    def get_features( self, r : int, c : int ):
-        """Return a dictionary of grid features for the given row and column."""
-        keys = [ "elevation", "slope", "image", "larea", "iop" ]
-        values = [  self.elevationNodeMap[r][c],
-                    self.slopeMap[r][c],
-                    self.imageMap[r][c], 
-                    [],
-                    0                       ]
-        return { k : v for k, v in zip(keys, values) }
 
 
 def isPowerOfTwo(n):
@@ -393,6 +344,40 @@ def get_waypoints( route : np.ndarray ):
     wpts.append( (x_curr, y_curr) )
     return wpts
 
+def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray ):
+    """Save key Webots startup information in text file for C code."""
+
+    # calculate translation values for vehicle (WeBots coordinate system)
+    tx = str(wpts[0][0] + XTRANSLATE + XSPACING)
+    ty = str(wpts[0][1] + YTRANSLATE + YSPACING)
+    tz = str(elev[CORNER_SIZE][CORNER_SIZE] + VEHICLE_HEIGHT/2)
+
+    # put all waypoints into string and adjust for elevation map offset in WeBots
+    index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
+    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
+                                                    str(el[1] + YTRANSLATE + YSPACING),
+                                                    str(round(elev[ index(el[1]) ][ index(el[0]) ] + VEHICLE_HEIGHT/2,4)))
+                                                    for el in wpts] )
+
+    # structure of .wbo file
+    formatted =  """Vehicle Config File
+Vehicle {{
+translation {} {} {}
+rotation {} {} {} {}
+count {}
+waypoints {}
+}}"""   .format(   tx, ty, tz,
+                0, 0, -1, -0.85,
+                str(len(wpts)),
+                wpts_string,
+            )
+    # Save waypoints as text file usable in WeBots
+    try:
+        with open('maps/elevationmap_vehicle_config.txt', "w") as f:
+            f.write( formatted )
+            f.close()
+    except:
+        raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
 
 # Main processing
 if __name__ == '__main__':
@@ -423,18 +408,18 @@ if __name__ == '__main__':
 
     # Create intensity 2D numpy array using user defined params
     print("[INFO]: Creating Elevation Map...")
-    (x_mesh, y_mesh), elevation2DArr = terrain.elevation_map( x_pts, y_pts )
+    (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
 
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
-    terrain.wbo_map( elevation2DArr )
+    terrain.wbo_map( elevationCorners )
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
-    slope = terrain.slope_map( elevation2DArr )
+    slope = terrain.slope_map( elevationCorners )
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
@@ -444,12 +429,12 @@ if __name__ == '__main__':
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
     # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
     clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
-    solutionRoute_greedyIndex = greedyRoute3D(  clip(elevation2DArr),     # map_array of heights
+    solutionRoute_greedyIndex = greedyRoute3D(  clip(elevationCorners),     # map_array of heights
                                                 clip(slope),              # array of slope angles
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    solutionRoute_astarIndex = astarRoute3D(clip(elevation2DArr),     # map_array of heights
+    solutionRoute_astarIndex = astarRoute3D(clip(elevationCorners),     # map_array of heights
                                             clip(slope),              # array of slope angles
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
@@ -468,7 +453,7 @@ if __name__ == '__main__':
         waypoints_astar = get_waypoints( route = solutionRoute_astar )
 
         # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        terrain.wbo_vehicle_config( elev = elevation2DArr, wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar )
+        wbo_vehicle_config( elev = elevationCorners, wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version
@@ -487,7 +472,7 @@ if __name__ == '__main__':
         ax1.plot(x_pts,y_pts,'ro')
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
-        fig.colorbar( ax1.pcolormesh(x_mesh,y_mesh,elevation2DArr), ax=ax1 )
+        fig.colorbar( ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners), ax=ax1 )
 
         # SLOPE HEATMAP OUTPUT
         ax2.set(title="Slope Heatmap")
@@ -503,6 +488,6 @@ if __name__ == '__main__':
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         ax2.legend(['Greedy', 'A*'])
-        fig.colorbar( ax2.pcolormesh(x_mesh, y_mesh, slope), ax=ax2 )
+        fig.colorbar( ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope), ax=ax2 )
         plt.show()
         ###################################################
