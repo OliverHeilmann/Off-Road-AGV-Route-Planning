@@ -69,8 +69,8 @@ SAMPLES = 85       # Number of additional random samples used to generate heat m
 class Terrain( LandTypes ):
     """Terrain class holds all functions relating to terrain generation."""
     def __init__( self, *args, **kwargs ):
-        # create object of inherited land type class
-        self.landtypes = LandTypes()
+        # initialise inherited land type class
+        LandTypes.__init__( self )
 
         # prepare to store values, create variable names
         self.x_mesh = list
@@ -232,13 +232,13 @@ boundingObject USE TERRAIN_MAP
 
         # loop through land types and find their total coverage areas in pixel count
         total_types = defaultdict( lambda : float )
-        for tp in self.landtypes.get_type_keys():
+        for tp in self.get_type_keys():
 
             # if slope type then ignore, we handle this differently
             if tp == "Slope": total_types[ tp ] = None; break
 
             image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
-            lower, upper = self.landtypes.get_colour_range( tp )     # get colour range
+            lower, upper = self.get_colour_range( tp )     # get colour range
             image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
             total_types[ tp ] = cv2.countNonZero(image_mask) #/ (self.image.size/4)   # ratio of colour to whole image
 
@@ -247,12 +247,12 @@ boundingObject USE TERRAIN_MAP
         col = 0
         for iy, ix in np.ndindex(self.imageMap.shape):
             row = 0  
-            for tp in self.landtypes.get_type_keys():
+            for tp in self.get_type_keys():
                 if tp == "Slope":
                     temp[row, col] = self.slopeMap[iy, ix]
                 else:
                     image_hsv = cv2.cvtColor( self.imageMap[iy, ix], cv2.COLOR_BGR2HSV )   # get hsv of grid
-                    lower, upper = self.landtypes.get_colour_range( tp )            # get colour range
+                    lower, upper = self.get_colour_range( tp )            # get colour range
                     image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
                     temp[row, col] = cv2.countNonZero( image_mask ) / total_types[ tp ]    # ratio of colour in grid to colour in img
                 row += 1
@@ -266,6 +266,14 @@ boundingObject USE TERRAIN_MAP
             # loop through all the grid squares and calculate their land type coverage areas
             self.larea = np.full( self.imageMap.shape, 0.0, dtype=object )
             print("OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+            """To Do:
+            1) We have all the normalised results for grid squares, now we need to calculate IOP using the equation
+                and the VRF values.
+            2) Add each of them to the self.iop result 2d array (can use lambda function to keep code clean)
+            3) Plot the results on a heatmap to check it looks reasonable
+            """
+
             # for iy, ix in np.ndindex(self.imageMap.shape):
 
             #     # get the class values, use the IOP equation to calculate the IOP values...

@@ -7,6 +7,13 @@ By Oliver Heilmann
 """
 import numpy as np
 
+class Tile:
+    def __init__( self, ):
+
+        pass
+
+    
+
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
     def __init__( self, ):
