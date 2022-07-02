@@ -26,7 +26,7 @@ import random
 import cv2
 
 from scipy import stats
-from maps.landtypes import LandTypes
+from maps.landtypes import Tile, LandTypes
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
 from collections import defaultdict
@@ -283,7 +283,6 @@ boundingObject USE TERRAIN_MAP
         else:
             raise ValueError("[ERROR]: Normalised values do not sum to one. Check colour ranges are" +  \
                                         "appropriate perhaps increasing the range will fix the issue)." )
-
 
     def wbo_vehicle_config( self, elev : np.ndarray, wpts : np.ndarray ):
         """Save key Webots startup information in text file for C code."""

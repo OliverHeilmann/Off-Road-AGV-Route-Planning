@@ -1,18 +1,12 @@
 """
-Colour values shown below were taken from the choosecolours.py script. If you wish to change them,
+Colour values shown below were taken from the choose colours.py script. If you wish to change them,
 simply run the script with the path to your chosen image. Click the colour on HSV window and observe
 the results shown in the terminal.
 
 By Oliver Heilmann
 """
 import numpy as np
-
-class Tile:
-    def __init__( self, ):
-
-        pass
-
-    
+import cv2
 
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
@@ -45,7 +39,40 @@ class LandTypes:
         return f"{list(self.classes.keys())}"
 
 
+class Tile( LandTypes ):
+    """Each section of the terrain has a set of attributes/ traits. Use this class to check if passable."""
+    def __init__( self ):
+        # initialise inherited land type class
+        LandTypes.__init__( self )
+
+        # initialise the traits contained in the tile
+        self.elevation = float
+        self.slope = float
+        self.image = np.ndarray
+        self.iop = float
+
+    def traitCoverage( self, land_class : str ):
+        """Check coverage area of land class, return value between 0 and 1."""
+        image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
+        lower, upper = self.get_colour_range( land_class )          # get colour range
+        image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
+        return cv2.countNonZero(image_mask) / (self.image.size/self.image.shape[-1])    # ratio of colour to whole image
+
+    def isobstacle( self, max_slope = 0.5, vehicle_type = "land", passable = True ):
+        """Check if vehicle can pass this tile with given attributes."""
+        if vehicle_type == "land":  # cannot travel over water
+            passable = True if self.traitCoverage( "River" ) < 0.5 else False
+        elif vehicle_type == "water":   # cannot travel over land
+            passable = True if self.traitCoverage( "River" ) >= 0.5 else False
+        return False if max_slope >= self.slope and passable else True
+        
+    def __str__( self ):
+        """Returns all the trait variable names and their values."""
+        return vars( self )
+
+
 if __name__ == "__main__":
+    tile = Tile()
     land_types = LandTypes()
     print( land_types.get_colour( "Firebrake" ) )
     print(land_types)
