@@ -39,11 +39,11 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 16    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 16    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 2            # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 2           # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
@@ -61,8 +61,8 @@ H = 10    # Radius (h) defines how much affect each point has to KDE (higher H i
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = False   # include additional noise?
-SAMPLES = 85        # Number of additional random samples used to generate heat map and terrain profile
+ADD_NOISE = True   # include additional noise?
+SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -249,7 +249,6 @@ boundingObject USE TERRAIN_MAP
         result = np.nan_to_num( result, nan=1.0/result.shape[1] )  # replace NaNs with value summing to 1.
         check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
         return result, check
-
 
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
