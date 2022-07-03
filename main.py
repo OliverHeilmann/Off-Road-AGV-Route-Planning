@@ -250,6 +250,37 @@ boundingObject USE TERRAIN_MAP
         check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
         return result, check
 
+
+    def iop_map2( self, *args, **kwargs ):
+
+        # get % coverage area of feature within input tile
+        getPctArea = lambda mask : (cv2.countNonZero(mask) * tile.image.shape[-1]) / tile.image.size
+
+        # loop through tile objects and calculate their IOP values
+        for tile in np.nditer( self.tiles, flags=['refs_ok'] ):
+            tile = tile.tolist()    # make accessible
+
+            for feature in self.get_type_keys():
+                vrf = tile.get_type_info( feature )[-1]  # vegetation roughness factor
+
+                # if slope type then append None placeholder, we handle this differently
+                if feature == "Slope": tile.iop += tile.slope * vrf             # updating iop total
+                else:
+                    image_hsv = cv2.cvtColor( tile.image, cv2.COLOR_BGR2HSV )   # get hsv of tile image
+                    lower, upper = self.get_colour_range( feature )             # get colour range
+                    image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
+                    tile.iop += getPctArea(image_mask) * vrf                    # updating iop total
+
+        iops = [obj.iop for row in self.tiles for obj in row]
+        A = np.array(iops)
+        A += abs(min(iops))
+        B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
+        # B -= 1
+
+        scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
+        return np.array(scaled).reshape(-1, XDIMENSION-1)   # return 2D array of iops
+
+
     def iop_map( self, params = [] ):
         """Calculate coverage areas of terrain features..."""
 
@@ -424,7 +455,7 @@ if __name__ == '__main__':
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
-    iop2dArr = terrain.iop_map( )
+    iop2dArr = terrain.iop_map2( )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -466,13 +497,14 @@ if __name__ == '__main__':
 
         # HEADER
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-        fig.suptitle(f'Elevation and Slope Heatmaps With Path Planning\n(Vehicle Max Slope: {MAX_SLOPE_ANGLE} [rad])', fontsize=16)
+        fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Vehicle Max Slope: {MAX_SLOPE_ANGLE} [rad])', fontsize=16)
         
         ##### ELEVATION HEATMAP OUTPUT #####
         ax1.set(title="Elevation Heatmap")
         ax1.plot(x_pts,y_pts,'ro')
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
+        # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
         fig.colorbar( ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners), ax=ax1 )
 
         ##### SLOPE HEATMAP OUTPUT #####
@@ -484,13 +516,13 @@ if __name__ == '__main__':
         ax2.plot(x_rt_astar, y_rt_astar,'r-')
         ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
         # plot axes and legend
-        ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
+        ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         ax2.legend(['Greedy', 'A*'])
         fig.colorbar( ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope), ax=ax2 )
         
         ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
-        ax3.set(title="Terrain Image")
+        ax3.set(title="Terrain Classes Image")
         ax3.imshow( np.flip(cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB),axis=-1) )
         # plot empty data and show key of colours and respective classes
         [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
