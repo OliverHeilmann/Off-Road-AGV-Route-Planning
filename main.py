@@ -39,17 +39,17 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 4    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 4    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 2           # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 1           # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
-USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
@@ -58,11 +58,11 @@ PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+x_pts = [2]#[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [2]#[10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True   # include additional noise?
-SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
+ADD_NOISE = False   # include additional noise?
+SAMPLES = 110        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -195,7 +195,7 @@ boundingObject USE TERRAIN_MAP
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct slope data.
-        slopeNodes = cv2.resize( self.slopeCorners, (XDIMENSION-1, YDIMENSION-1) )
+        slopeNodes = cv2.resize( self.slopeCorners, (XDIMENSION-1, YDIMENSION-1) )  # INTERPOLATION!
         for iy, ix in np.ndindex( slopeNodes.shape ):
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
@@ -216,6 +216,17 @@ boundingObject USE TERRAIN_MAP
         # calculate segment size in pixels
         M = row//(YDIMENSION-1)
         N = col//(XDIMENSION-1)
+
+        # (PIXEL_RESOLUTION + YSPACING) // YDIMENSION
+        # tilesY = PIXEL_RESOLUTION // YDIMENSION
+        # half_tile = tilesY // 2
+        # remainder_half_tile = tilesY % 2
+
+
+        # for rn, r in enumerate( range(row+half_tile+remainder_half_tile, -half_tile, -M) ):
+        #     for cn, c in enumerate(range(0,col,N)):
+        #             self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N] 
+
         
         # get tiles in format/ sequence shown below:
         #     y
@@ -228,7 +239,7 @@ boundingObject USE TERRAIN_MAP
         # as a 2D array
         for rn, r in enumerate(range(row,0,-M)):
             for cn, c in enumerate(range(0,col,N)):
-                self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N]                   ##########################################
+                self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N]
 
         # check segmentation has worked...
         if check:
@@ -243,15 +254,7 @@ boundingObject USE TERRAIN_MAP
                     cv2.waitKey(0)
             cv2.destroyAllWindows()
 
-    def normalise( self, arr2D : np.ndarray ):
-        """Normalise the large array of temp results, then check sum to ~1."""
-        result = pow( arr2D / np.linalg.norm(arr2D, axis=-1)[:, np.newaxis], 2 )
-        result = np.nan_to_num( result, nan=1.0/result.shape[1] )  # replace NaNs with value summing to 1.
-        check = np.all(np.sum( result, axis=-1 ) >= 0.9999 ) # check that normalising worked...
-        return result, check
-
-
-    def iop_map2( self, *args, **kwargs ):
+    def iop_map( self, *args, **kwargs ):
 
         # get % coverage area of feature within input tile
         getPctArea = lambda mask : (cv2.countNonZero(mask) * tile.image.shape[-1]) / tile.image.size
@@ -279,59 +282,6 @@ boundingObject USE TERRAIN_MAP
 
         scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
         return np.array(scaled).reshape(-1, XDIMENSION-1)   # return 2D array of iops
-
-
-    def iop_map( self, params = [] ):
-        """Calculate coverage areas of terrain features..."""
-
-        # loop through land types and find their total coverage areas in pixel count
-        total_type_areas = defaultdict( lambda : float )
-        for tp in self.get_type_keys():
-            # if slope type then ignore, we handle this differently
-            if tp == "Slope": total_type_areas[ tp ] = None; break
-
-            image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
-            lower, upper = self.get_colour_range( tp )     # get colour range
-            image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
-            total_type_areas[ tp ] = cv2.countNonZero(image_mask) #/ (self.image.size/4)   # ratio of colour to whole image
-
-        # Loop through all the grid squares and calculate the normalised values per terrain type
-        temp = np.zeros([len(total_type_areas),self.tiles.size])  # numpy array for storing the land type coverage areas
-        col = 0
-        for iy, ix in np.ndindex(self.tiles.shape):
-            row = 0  
-            for tp in self.get_type_keys():
-                if tp == "Slope":
-                    temp[row, col] = self.tiles[iy, ix].slope
-                else:
-                    image_hsv = cv2.cvtColor( self.tiles[iy, ix].image, cv2.COLOR_BGR2HSV )   # get hsv of grid
-                    lower, upper = self.get_colour_range( tp )            # get colour range
-                    image_mask = cv2.inRange( image_hsv, lower, upper )             # create mask
-                    temp[row, col] = cv2.countNonZero( image_mask ) / total_type_areas[ tp ]    # ratio of colour in grid to colour in img
-                row += 1
-            col += 1
-
-        # Normalise results...
-        temp, passed = self.normalise( temp )
-
-        if passed:
-            # loop through tile objects and calculate their IOP values
-            for col, tile in enumerate(np.nditer( self.tiles, flags=['refs_ok'] )):
-                tile = tile.tolist()    # make accessible
-
-                # loop through land class types
-                for row, tp in enumerate(self.get_type_keys()):
-                    vrf = tile.get_type_info( tp )[-1]  # vegetation roughness factor
-                    tile.iop += temp[row, col] * vrf    # sum values into iop tile trait
-            
-            # min_iop = min([obj.iop for row in self.tiles for obj in row])
-            # iops_shift = [obj.iop+abs(min_iop) for row in self.tiles for obj in row]
-            iops = [obj.iop for row in self.tiles for obj in row]
-            return np.array(iops).reshape(-1, XDIMENSION-1)   # return 2D array of iops
-        else:
-            raise ValueError("[ERROR]: Normalised values do not sum to one. Check colour ranges are" +  \
-                                        "appropriate perhaps increasing the range will fix the issue)." )
-
 
 def isPowerOfTwo(n):
     """Function to check if x is power of 2."""
@@ -455,7 +405,7 @@ if __name__ == '__main__':
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
-    iop2dArr = terrain.iop_map2( )
+    iop2dArr = terrain.iop_map( )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -523,7 +473,7 @@ if __name__ == '__main__':
         
         ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
         ax3.set(title="Terrain Classes Image")
-        ax3.imshow( np.flip(cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB),axis=-1) )
+        ax3.imshow( cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB) )
         # plot empty data and show key of colours and respective classes
         [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
                                     for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]

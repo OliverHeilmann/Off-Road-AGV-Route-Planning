@@ -33,7 +33,7 @@ class LandTypes:
         r = self.classes[key][0][0] / 255.
         g = self.classes[key][0][1] / 255.
         b = self.classes[key][0][2] / 255.
-        return  (r, g, b)
+        return (r, g, b)
 
     def get_type_info( self, key : str ):
         """Return colours a list of structure [mid, lower, upper, VRF]."""
