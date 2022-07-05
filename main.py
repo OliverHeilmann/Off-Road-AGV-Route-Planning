@@ -33,7 +33,7 @@ from collections import defaultdict
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians
+MAX_SLOPE_ANGLE = 0.35      # Maximum permissible slope angle for vehicle in radians
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
@@ -58,10 +58,10 @@ PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [2]#[50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [2]#[10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = False   # include additional noise?
+ADD_NOISE = True   # include additional noise?
 SAMPLES = 110        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
@@ -123,7 +123,7 @@ class Terrain( Tile, LandTypes ):
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct elevation data.
-        elevationNodes = cv2.resize( self.elevationCorners, (XDIMENSION-1, YDIMENSION-1) )
+        elevationNodes = cv2.resize( self.elevationCorners, (XDIMENSION-1, YDIMENSION-1) )  # INTERPOLATION!
         for iy, ix in np.ndindex( elevationNodes.shape ):
             self.tiles[ iy, ix ].elevation = elevationNodes[ iy, ix ]
         return (self.x_mesh, self.y_mesh), self.elevationCorners
@@ -217,17 +217,6 @@ boundingObject USE TERRAIN_MAP
         M = row//(YDIMENSION-1)
         N = col//(XDIMENSION-1)
 
-        # (PIXEL_RESOLUTION + YSPACING) // YDIMENSION
-        # tilesY = PIXEL_RESOLUTION // YDIMENSION
-        # half_tile = tilesY // 2
-        # remainder_half_tile = tilesY % 2
-
-
-        # for rn, r in enumerate( range(row+half_tile+remainder_half_tile, -half_tile, -M) ):
-        #     for cn, c in enumerate(range(0,col,N)):
-        #             self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N] 
-
-        
         # get tiles in format/ sequence shown below:
         #     y
         #     ^
@@ -264,7 +253,7 @@ boundingObject USE TERRAIN_MAP
             tile = tile.tolist()    # make accessible
 
             for feature in self.get_type_keys():
-                vrf = tile.get_type_info( feature )[-1]  # vegetation roughness factor
+                vrf = tile.get_type_info( feature )[-1]  # vegetation roughness factor (VRF)
 
                 # if slope type then append None placeholder, we handle this differently
                 if feature == "Slope": tile.iop += tile.slope * vrf             # updating iop total
@@ -280,8 +269,8 @@ boundingObject USE TERRAIN_MAP
         B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
         # B -= 1
 
-        scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
-        return np.array(scaled).reshape(-1, XDIMENSION-1)   # return 2D array of iops
+        # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
+        return np.array(iops).reshape(-1, XDIMENSION-1)   # return 2D array of iops
 
 def isPowerOfTwo(n):
     """Function to check if x is power of 2."""
