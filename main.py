@@ -28,7 +28,8 @@ import cv2
 from scipy import stats
 from maps.landtypes import Tile, LandTypes
 from greedysearch import greedyRoute3D
-from astarsearch import astarRoute3D
+# from astarsearch import astarRoute3D
+from astarsearchIOP import astarRoute3D
 from collections import defaultdict
 
 ############################## SETUP ###################################
@@ -36,11 +37,12 @@ from collections import defaultdict
 MAX_SLOPE_ANGLE = 0.35      # Maximum permissible slope angle for vehicle in radians
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
+MAX_VELOCITY = 50.0         # Maximum Vehicle velocity in kmph
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 4    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 4    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
+YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
 
 XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1           # Number of corners to ignore for path planning (to not fall off edge of map)
@@ -62,7 +64,7 @@ x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
 ADD_NOISE = True   # include additional noise?
-SAMPLES = 110        # Number of additional random samples used to generate heat map and terrain profile
+SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
 
@@ -263,14 +265,28 @@ boundingObject USE TERRAIN_MAP
                     image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
                     tile.iop += getPctArea(image_mask) * vrf                    # updating iop total
 
+            # Set IOP values to be in range -1 < x < +1
+            if tile.iop > 1: tile.iop = 1
+            elif tile.iop < -1: tile.iop = -1
+
+            # calculate estimated velocity at tile using IOP
+            tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + tile.iop )
+
         iops = [obj.iop for row in self.tiles for obj in row]
-        A = np.array(iops)
-        A += abs(min(iops))
-        B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
+        # A = np.array(iops)
+        # A += abs(min(iops))
+        # B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
         # B -= 1
 
+        # AA = iops + abs(min(iops))
+        # BB = np.linalg.norm( AA )
+        # norm=AA/BB
+
+        velocities = [obj.velocity for row in self.tiles for obj in row]
+
         # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
-        return np.array(iops).reshape(-1, XDIMENSION-1)   # return 2D array of iops
+        return np.array(iops).reshape(-1, XDIMENSION-1), np.array(velocities).reshape(-1, XDIMENSION-1)   # return 2D array of iops
+
 
 def isPowerOfTwo(n):
     """Function to check if x is power of 2."""
@@ -394,7 +410,7 @@ if __name__ == '__main__':
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
-    iop2dArr = terrain.iop_map( )
+    iop2dArr, vel2dArr = terrain.iop_map( )
 
     # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -405,8 +421,14 @@ if __name__ == '__main__':
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    solutionRoute_astarIndex = astarRoute3D(clip(elevationCorners),     # map_array of heights
-                                            clip(slope),              # array of slope angles
+    # solutionRoute_astarIndex = astarRoute3D(clip(elevationCorners),     # map_array of heights
+    #                                         clip(slope),              # array of slope angles
+    #                                         maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+    #                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+
+    clip2 = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
+    solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
+                                            maxvelocity=MAX_VELOCITY,
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
@@ -477,7 +499,7 @@ if __name__ == '__main__':
         ax4.plot(x_rt_astar, y_rt_astar,'r-')
         ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
         ax4.legend(['Greedy', 'A*'])
-        fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, iop2dArr), ax=ax4 )
+        fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
 
         plt.show()
         ###################################################

@@ -58,7 +58,8 @@ class Tile( LandTypes ):
         self.elevation = float
         self.slope = float
         self.image = np.ndarray
-        self.iop = 0
+        self.iop = 0    # will add to iteratively
+        self.velocity = float
 
     def traitCoverage( self, land_class : str ):
         """Check coverage area of land class, return value between 0 and 1."""
