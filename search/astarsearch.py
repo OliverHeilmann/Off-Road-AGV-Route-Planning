@@ -64,26 +64,28 @@ class Frontier:
         return self.queue.length()
 
 
-def valid_space(obstacles, space, maxslope):
-    return 0 <= space[0] < len(obstacles) \
-           and 0 <= space[1] < len(obstacles[0]) \
-           and obstacles[space] < maxslope
-
-
-def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1,1)):
+def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=(1,1)):
     if goal is None:
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
-    # f(n) = g(n) + h(n) where h(n) is the straight line distance to the goal from current point
-    # and g(n) is the total cost already accumulated called path_cost (from start) - written as 
-    # lambda expression
-    f_n = lambda node : node.path_cost + sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +    \
-                                                pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +    \
-                                                pow( maze[goal] - maze[node.state], 2 ))
-    
-    g_step = lambda node : sqrt(pow( (node.state[0] - node.parent.state[0]) * gridsize[0], 2 ) +   \
-                                pow( (node.state[1] - node.parent.state[1]) * gridsize[1], 2 ) +   \
-                                pow( maze[node.state] - maze[node.parent.state], 2 ))
+    # f(n) = g(n) + h(n) where h(n) is the straight line distance to the goal from current point divided
+    # by the maximum vehicle velocity and g(n) is the total cost already accumulated called path_cost 
+    # (from start position), measured in total time taken to reach current position. Cost is calculated
+    # using:
+    #       Time = Distance / Speed
+    f_n = lambda node : node.path_cost + sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +         \
+                                                pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +         \
+                                                pow( maze[goal].elevation - maze[node.state].elevation, 2)) \
+                                        / maxvelocity
+
+    # Calculate g_step, the cost of state transition between two nodes (tiles):
+    #       g_step = dDist / (Vmax * dIOP) 
+    # where:
+    #       dIOP = ( IOPprev + IOPcurr ) /  2
+    g_step = lambda node : 2 * sqrt(pow( (node.state[0] - node.parent.state[0]) * gridsize[0], 2 ) +            \
+                                    pow( (node.state[1] - node.parent.state[1]) * gridsize[1], 2 ) +            \
+                                    pow( maze[node.state].elevation - maze[node.parent.state].elevation, 2 ))   \
+                                / (maze[node.state].velocity + maze[node.parent.state].velocity)
 
     frontier = Frontier( f_n, Node(state = start, actual_cost_func=g_step) )
     explored = set()
@@ -109,11 +111,11 @@ def astar_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1
         upleft = (current_state[0] + 1, current_state[1] - 1)
         
         for space in [right, left, down, downright, downleft, up, upright, upleft]:
-            # check if space is valid with the slope map (remember, our heuristic 
-            # is actually calculating distances in x,y,z however)
-            if valid_space(obstacles, space, maxslope) and space not in explored:
-                node = Node(state=space, parent=current_node, actual_cost_func=g_step)
-                frontier.push(node)
+            # check if tile space is in bounds, is an obstacle and if it has already been explored...
+            if 0 <= space[0] < len(maze) and 0 <= space[1] < len(maze[0]):
+                if not maze[space].isobstacle(max_slope=maxslope) and space not in explored:
+                    node = Node(state=space, parent=current_node, actual_cost_func=g_step)
+                    frontier.push(node)
 
         if frontier.length() == 0:
             return None, number_explored
@@ -136,11 +138,11 @@ def total_distance( route, maze, gridsize ):
         curr = step
     return round(total,2)
 
-def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
+def astarRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
     """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
     starttime = time.time()
-    final_node, number_explored = astar_search( maze = intensitymap,
-                                                obstacles = slopemap,
+    final_node, number_explored = astar_search( maze = terrain,
+                                                maxvelocity = maxvelocity,
                                                 maxslope = maxslope,
                                                 gridsize = gridsize)
     endtime = round((time.time() - starttime), 2)
@@ -173,5 +175,5 @@ def astarRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gr
 
         # consider point to point distances not accounding for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
-        print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
+        # print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
     return solution[::-1]   # [::-1] reverse to start in correct order

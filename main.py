@@ -28,13 +28,12 @@ import cv2
 from scipy import stats
 from maps.landtypes import Tile, LandTypes
 from greedysearch import greedyRoute3D
-# from astarsearch import astarRoute3D
-from astarsearchIOP import astarRoute3D
+from astarsearch import astarRoute3D
 from collections import defaultdict
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.35      # Maximum permissible slope angle for vehicle in radians
+MAX_SLOPE_ANGLE = 0.35      # Maximum permissible slope angle for vehicle in radians (0.65 is ans)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 MAX_VELOCITY = 50.0         # Maximum Vehicle velocity in kmph
@@ -210,10 +209,10 @@ boundingObject USE TERRAIN_MAP
         row, col, _ = self.image.shape
         
         # add alpha channel to image so that WeBots doesn't perform image interpolation
-        rgba = cv2.cvtColor( self.image, cv2.COLOR_RGB2RGBA )
+        self.image = cv2.cvtColor( self.image, cv2.COLOR_RGB2RGBA ) # --> RGBA
 
         # resave image to correct dimensions for WeBots simulator
-        cv2.imwrite("webots_moose/protos/textures/TerrainFeaturesScaled.png", rgba)
+        cv2.imwrite("webots_moose/protos/textures/TerrainFeaturesScaled.png", self.image)
         
         # calculate segment size in pixels
         M = row//(YDIMENSION-1)
@@ -230,7 +229,7 @@ boundingObject USE TERRAIN_MAP
         # as a 2D array
         for rn, r in enumerate(range(row,0,-M)):
             for cn, c in enumerate(range(0,col,N)):
-                self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N]
+                self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N] # x4 channel image into tiles
 
         # check segmentation has worked...
         if check:
@@ -416,15 +415,9 @@ if __name__ == '__main__':
     # Don't pass border values as their slopes are not accurate due to kerneling method. 
     # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
     clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
-    solutionRoute_greedyIndex = greedyRoute3D(  clip(elevationCorners),     # map_array of heights
-                                                clip(slope),              # array of slope angles
+    solutionRoute_greedyIndex = greedyRoute3D(  clip(terrain.tiles),            # terrain tile classes 2D array
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
-
-    # solutionRoute_astarIndex = astarRoute3D(clip(elevationCorners),     # map_array of heights
-    #                                         clip(slope),              # array of slope angles
-    #                                         maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
-    #                                         gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     clip2 = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
     solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array

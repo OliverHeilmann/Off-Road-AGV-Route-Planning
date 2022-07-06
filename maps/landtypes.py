@@ -11,15 +11,15 @@ import cv2
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
     def __init__( self, ):
-        # outline colours and their ranges as [type : [mid, lower, upper, VRF]]
+        # HSV colours and their ranges as [type : [mid, lower, upper, VRF]]
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
-        self.classes = {"Firebrake" : [ [0, 0, 56]    , [-15, -15, 16], [15, 15, 96]  ,  0.3],
-                        "Open Area" : [ [56, 106, 255], [41, 91, 215] , [71, 121, 295],  0.5],
-                        "River"     : [ [84, 165, 255], [69, 150, 215], [99, 180, 295],  -1.0],
-                        "Swamp"     : [ [10, 198, 240], [-5, 183, 200], [25, 213, 280],  -0.8],
-                        "Forest"    : [ [66, 255, 118], [51, 240, 78] , [81, 270, 158],  -0.8],
-                        "Orchard"   : [ [164, 81, 212], [149, 66, 172], [179, 96, 252],  -0.5],
+        self.classes = {"Firebrake" : [ [0, 0, 64], [-15, -15, 24], [15, 15, 104]  ,   0.3],
+                        "Open Area" : [ [50, 89, 253], [35, 74, 213], [65, 104, 293],   0.5],
+                        "River"     : [ [82, 98, 252], [67, 83, 212], [97, 113, 292],  -1.0],
+                        "Swamp"     : [ [12, 177, 222], [-3, 162, 182], [27, 192, 262],  -0.8],
+                        "Forest"    : [ [53, 187, 127], [38, 172, 87], [68, 202, 167],  -0.8],
+                        "Orchard"   : [ [161, 58, 205], [146, 43, 165], [176, 73, 245],  -0.5],
                         "Slope"     : [ [            ], [            ], [            ],  -0.4],
                         }
     def get_type_keys( self, drop = None ):

@@ -64,15 +64,16 @@ def valid_space(obstacles, space, maxslope):
            and 0 <= space[1] < len(obstacles[0]) \
            and obstacles[space] < maxslope
 
-def greedy_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(1,1)):
+def greedy_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=(1,1)):
     if goal is None:
         goal = (len(maze) - 1, len(maze[0]) - 1)
 
     # here's our euclidean distance heurstic in 3D space, as a lambda expression
     # f(n) = h(n) where h(n) is the straight line distance to the goal from current point
-    heuristic = lambda node: sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +    \
-                                    pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +    \
-                                    pow( maze[goal] - maze[node.state], 2 ))
+    heuristic = lambda node: sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +         \
+                                    pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +         \
+                                    pow( maze[goal].elevation - maze[node.state].elevation, 2)) \
+                                / maxvelocity
 
     frontier = Frontier(heuristic, Node(start))
     explored = set()
@@ -100,9 +101,10 @@ def greedy_search(maze, obstacles, maxslope, start=(0, 0), goal=None, gridsize=(
         for space in [right, left, down, downright, downleft, up, upright, upleft]:
             # check if space is valid with the slope map (remember, our heuristic 
             # is actually calculating distances in x,y,z however)
-            if valid_space(obstacles, space, maxslope) and space not in explored:
-                node = Node(space, parent=current_node)
-                frontier.push(node)
+            if 0 <= space[0] < len(maze) and 0 <= space[1] < len(maze[0]):
+                if not maze[space].isobstacle(max_slope=maxslope) and space not in explored:
+                    node = Node(space, parent=current_node)
+                    frontier.push(node)
 
         if frontier.length() == 0:
             return None, number_explored
@@ -125,11 +127,11 @@ def total_distance( route, maze, gridsize ):
         curr = step
     return round(total,2)
 
-def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, gridsize=(1,1) ):
+def greedyRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
     """Perform Greedy Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
     starttime = time.time()
-    final_node, number_explored = greedy_search(maze = intensitymap,
-                                                obstacles = slopemap,
+    final_node, number_explored = greedy_search(maze = terrain,
+                                                maxvelocity = maxvelocity,
                                                 maxslope = maxslope,
                                                 gridsize = gridsize)
     endtime = round((time.time() - starttime), 2)
@@ -159,5 +161,5 @@ def greedyRoute3D( intensitymap : np.array, slopemap : np.array, maxslope=100, g
 
         # consider point to point distances not accounding for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
-        print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
+        # print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
     return solution[::-1]   # [::-1] reverse to start in correct order
