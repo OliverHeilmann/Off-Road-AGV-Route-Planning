@@ -74,7 +74,7 @@ class Tile( LandTypes ):
             passable = True if self.traitCoverage( "River" ) < 0.5 else False
         elif vehicle_type == "water":   # cannot travel over land
             passable = True if self.traitCoverage( "River" ) >= 0.5 else False
-        return False if max_slope >= self.slope and passable else True
+        return False if max_slope >= self.slope and self.velocity > 0.0 and passable else True # False if NOT an obstacle!
         
     def __str__( self ):
         """Returns all the trait variable names and their values."""

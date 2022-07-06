@@ -33,7 +33,7 @@ from collections import defaultdict
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.35      # Maximum permissible slope angle for vehicle in radians (0.65 is ans)
+MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 MAX_VELOCITY = 50.0         # Maximum Vehicle velocity in kmph
@@ -62,7 +62,7 @@ H = 10    # Radius (h) defines how much affect each point has to KDE (higher H i
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True   # include additional noise?
+ADD_NOISE = False   # include additional noise?
 SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
