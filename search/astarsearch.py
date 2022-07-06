@@ -5,7 +5,7 @@ Description:
 By Oliver Heilmann
 Modified from ...
 """
-import time
+import time, cv2
 import numpy as np
 from math import sqrt, pow
 from priorityqueue import PriorityQueue
@@ -121,22 +121,38 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
             return None, number_explored
 
         current_node = frontier.pop()
-    
     return current_node, number_explored
 
-def total_distance( route, maze, gridsize ):
-    """Return the sum of all the distances traveled on route."""
+def totalDistTime( route, maze, gridsize ):
+    """Return the sum of all the distances and times accumulated on route."""
+    route = tuple([(r[1],r[0]) for r in route]) # make tuple and swap r, c's for correct lookups
     curr = route[0]; nxt = route[0]
-    total = 0
+    total_Dist = 0
+    total_Time = 0
+    dD = lambda c, n, g : sqrt( pow((n[0] - c[0]) * g[0], 2 ) +                 \
+                                pow((n[1] - c[1]) * g[1], 2 ) +                 \
+                                pow(maze[n].elevation - maze[c].elevation, 2))
     for step in route:
         # update to newest value, then perform distance calc between curr and nxt
-        nxt = step  
-        total += sqrt(  pow((nxt[0] - curr[0]) * gridsize[0], 2 ) +   \
-                        pow((nxt[1] - curr[1]) * gridsize[1], 2 ) +   \
-                        pow(maze[int(nxt[0]/gridsize[0])][int(nxt[1]/gridsize[1])] -        \
-                            maze[int(curr[0]/gridsize[0])][int(curr[1]/gridsize[1])], 2))
+        nxt = step
+        # if velocity in tile = 0 then this means IOP tile resolution is so much lower
+        # than the image pixel resolution that a path is made over obstacle tiles e.g.
+        # over two river tiles. The averaging between neighbouring pixels causes this
+        # issue. To avoid this, increase XDIMENSION and YDIMENSION or drop the 
+        # PIXEL_RESOLUTION value also!
+        if (maze[curr].velocity + maze[nxt].velocity) > 0.:
+            total_Dist += dD( curr, nxt, gridsize )
+            total_Time += 2 * dD( curr, nxt, gridsize ) / (maze[curr].velocity + maze[nxt].velocity)
+        else:
+            raise ValueError("""\n
+    If velocity in tile = 0 then this means IOP tile resolution is so much lower
+    than the image pixel resolution that a path is made over obstacle tiles e.g.
+    over two river tiles. The averaging between neighbouring pixels causes this
+    issue. To avoid this, increase XDIMENSION and YDIMENSION or drop the 
+    PIXEL_RESOLUTION value also!
+                            """)
         curr = step
-    return round(total,2)
+    return round(total_Dist,2), round(total_Time,2)
 
 def astarRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
     """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
@@ -156,9 +172,6 @@ def astarRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
         node = final_node
         steps = 0
         while node.parent is not None:
-            if steps == 0:
-                 print(f"    Total cost of path: {round(node.path_cost,2)}")
-
             # reformat solution to return as [ (x1,y1), (x2,y2) ... ]
             state = node.state
             solution.append( [state[1], state[0]] )
@@ -175,5 +188,6 @@ def astarRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
 
         # consider point to point distances not accounding for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
-        # print(f"    Estimated distance travelled [m]: {total_distance(solution[::-1], intensitymap, gridsize)}")
+        d, t = totalDistTime(solution[::-1], terrain, gridsize)
+        print("    Estimated distance travelled: {} [m]\n    Estimated time taken: {} [s]".format(d,t))
     return solution[::-1]   # [::-1] reverse to start in correct order

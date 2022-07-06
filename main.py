@@ -36,14 +36,13 @@ from collections import defaultdict
 MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
-MAX_VELOCITY = 50.0         # Maximum Vehicle velocity in kmph
+MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = 128    # Max number of nodes in x dir (MUST BE A POWER OF 2!)
-YDIMENSION = 128    # Max number of nodes in y dir (MUST BE A POWER OF 2!)
+XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 1    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 1   # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1           # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
@@ -55,14 +54,14 @@ USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise ro
 APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
-
+6
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
 x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = False   # include additional noise?
+ADD_NOISE = True   # include additional noise?
 SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
 
 #######################################################################
@@ -419,7 +418,6 @@ if __name__ == '__main__':
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    clip2 = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
     solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
                                             maxvelocity=MAX_VELOCITY,
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
