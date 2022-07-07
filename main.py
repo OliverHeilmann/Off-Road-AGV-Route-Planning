@@ -42,9 +42,9 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
-XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XDIMENSION = YDIMENSION = 256    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 1     # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 10     # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
@@ -58,23 +58,24 @@ SCALE = 1                           # Scale of appearance image over texture (in
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 19    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 200    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
 # x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 # y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-x_pts = [7, 13, 16, 24, 26, 29, 26, 21, 15, 10, 5, 6, 11, 18, 20, 17, 11, 4, 8, 10, 8, 4, 6, 7, 3, 6, 6, 7, 5, 28, 31, 35, 36, 47, 55, 58, 50, 43, 39, 38, 40, 45, 55, 65, 122, 95, 100, 96, 104, 116, 110, 109, 117, 115, 107, 98, 93, 92, 91, 100, 111, 107, 110, 59, 62, 59, 56, 59, 60, 62, 64, 69, 73, 78, 82, 88, 92, 92, 91, 80, 87, 87, 71, 62, 67, 75, 39, 43, 30, 19, 50, 36, 8, 25, 17, 54, 33, 31, 32, 38, 42, 45, 53, 57, 58, 60, 57, 60, 60, 62, 66, 70, 70, 65, 65, 93, 89, 95, 105, 108, 116, 119, 124, 124, 124, 119, 113, 109, 108, 101, 102, 109, 114, 117, 119, 115, 115, 117, 119, 120, 120, 121, 121, 101, 107, 114, 120, 122, 125, 123, 123, 118, 105, 113, 120, 120, 107, 109]
-y_pts = [35, 31, 38, 46, 50, 59, 71, 79, 87, 91, 93, 86, 76, 69, 61, 52, 45, 44, 50, 58, 68, 71, 63, 62, 57, 63, 57, 61, 67, 4, 17, 31, 34, 20, 10, 4, 6, 12, 22, 9, 5, 6, 16, 17, 13, 13, 20, 13, 2, 3, 11, 17, 21, 26, 28, 29, 33, 17, 3, 7, 10, 12, 13, 115, 102, 97, 83, 76, 65, 59, 58, 72, 76, 90, 100, 105, 112, 117, 118, 109, 118, 127, 123, 118, 113, 112, 107, 119, 118, 104, 114, 103, 123, 127, 116, 127, 110, 98, 93, 88, 84, 82, 86, 89, 93, 98, 77, 71, 67, 61, 58, 60, 63, 65, 72, 82, 84, 80, 76, 81, 90, 94, 88, 78, 68, 66, 63, 64, 59, 66, 69, 71, 80, 85, 76, 72, 73, 75, 73, 76, 76, 76, 76, 118, 123, 123, 121, 123, 123, 117, 115, 118, 113, 105, 104, 104, 110, 108]
+x_pts = [168, 173, 173, 168, 167, 171, 173, 171, 170, 170, 170, 170, 171, 173, 201, 183, 211, 242, 250, 255, 308, 338, 372, 417, 408, 178, 178, 188, 178, 193, 205, 185, 186, 183, 183, 188, 260, 290, 346, 385, 408, 406, 347, 295, 248, 210, 203, 231, 238, 267, 403, 356, 270, 257, 103, 71, 75, 100, 315, 326, 351, 368, 438, 487, 525, 488, 578, 617, 521, 452, 375, 306, 258, 292, 307, 320, 286, 310, 166, 101, 97, 105, 101, 103, 107, 112, 111, 111, 77, 33, 18, 7, 7, 27, 60, 137, 137, 142, 252, 295, 311, 291, 225, 178, 131, 113, 58, 25, 37, 36, 33, 30, 45, 148, 122, 137, 188, 241, 253, 317, 407, 506, 542, 566, 567, 601, 647, 688, 686, 570, 470, 468, 381, 331, 325, 287, 251, 221, 280, 226, 226, 285, 410, 445, 498, 501, 481, 460, 483, 483, 263, 135, 118, 97, 51, 630]
+y_pts = [699, 723, 758, 788, 815, 859, 894, 932, 994, 1005, 1069, 1102, 1128, 1190, 1222, 1259, 1240, 1255, 1284, 1284, 1308, 1328, 1355, 1402, 1437, 1305, 1340, 1415, 1480, 1540, 1578, 1503, 1425, 1387, 1372, 850, 902, 914, 937, 962, 983, 989, 962, 930, 914, 880, 865, 765, 729, 749, 854, 760, 647, 608, 725, 857, 993, 1115, 1027, 1194, 1200, 1142, 1138, 1138, 1107, 1029, 1035, 1130, 1238, 1267, 1253, 1184, 1132, 1068, 1045, 1073, 1153, 1169, 1230, 1283, 1377, 1435, 1500, 1534, 1580, 1594, 1490, 1355, 1267, 1099, 1045, 944, 844, 762, 724, 708, 708, 1519, 1462, 1493, 1539, 1654, 1713, 1773, 1853, 1904, 1893, 1775, 1669, 1562, 1410, 1319, 1207, 1392, 1710, 1809, 1659, 1649, 1768, 1760, 1667, 1528, 1493, 1453, 1339, 1265, 1223, 1168, 1135, 1313, 1387, 1450, 1523, 1493, 1397, 1372, 1338, 1314, 1203, 1105, 1013, 960, 1068, 1098, 1174, 1245, 1305, 1344, 1364, 1364, 1558, 1967, 2019, 2110, 2134, 1305]
 
 x_pts.extend(x_pts)
 y_pts.extend(y_pts)
+
 
 ADD_NOISE = False       # include additional noise?
 SAMPLES = 100           # Number of additional random samples used to generate heat map and terrain profile
 
 #### PATH PLANNING PARAMS
 START = (0,0)       # index value which agent starts at after including corner size
-END = (90,110)      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
 
@@ -195,11 +196,11 @@ boundingObject USE TERRAIN_MAP
             for j in range(1,cols+1):
                 slope_we = ((elevCnr[i+1][j-1] + 2*elevCnr[i][j-1] + elevCnr[i-1][j-1]) -    \
                             (elevCnr[i+1][j+1] + 2*elevCnr[i][j+1] + elevCnr[i-1][j+1]))/    \
-                            8 * XSPACING
+                            (8 * XSPACING)
 
                 slope_sn = ((elevCnr[i+1][j+1] + 2*elevCnr[i+1][j] + elevCnr[i+1][j-1]) -    \
                             (elevCnr[i-1][j+1] + 2*elevCnr[i-1][j] + elevCnr[i-1][j-1]))/    \
-                            8 * YSPACING
+                            (8 * YSPACING)
 
                 self.slopeCorners[i-1][j-1] = np.arctan( math.sqrt(slope_we**2 + slope_sn**2) )
 
@@ -463,56 +464,60 @@ if __name__ == '__main__':
 
         x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
         x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
+    else:
+        # no path, create empty lists
+        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = []
+        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = []
 
-        # HEADER
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-        fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE} rad, Max Velocity: {MAX_VELOCITY} Km/h)', fontsize=16)
-        
-        ##### ELEVATION HEATMAP OUTPUT #####
-        ax1.set(title="Elevation Heatmap")
-        ax1.plot(x_pts,y_pts,'ro')
-        ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
-                    ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
-        # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
-        fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners),
-                        ax=ax1,)
+    ##### PLOTTING HEADER #####
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
+    fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE} rad, Max Velocity: {MAX_VELOCITY} Km/h)', fontsize=16)
+    
+    ##### ELEVATION HEATMAP OUTPUT #####
+    ax1.set(title="Elevation Heatmap")
+    ax1.plot(x_pts,y_pts,'ro')
+    ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
+                ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
+    # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
+    fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners),
+                    ax=ax1,)
 
-        ##### SLOPE HEATMAP OUTPUT #####
-        ax2.set(title="Slope Heatmap")
-        # plot Greedy
-        ax2.plot(x_rt_greedy, y_rt_greedy,'g-')
-        ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
-        # plot A* 
-        ax2.plot(x_rt_astar, y_rt_astar,'r-')
-        ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
-        # plot axes and legend
-        ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
-                    ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
-        ax2.legend(['Greedy', 'A*'])
-        fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope),
-                        ax=ax2,)
-        
-        ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
-        ax3.set(title="Terrain Classes Image")
-        ax3.imshow( cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB) )
-        # plot empty data and show key of colours and respective classes
-        [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
-                            for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
-        # ax3.legend()
+    ##### SLOPE HEATMAP OUTPUT #####
+    ax2.set(title="Slope Heatmap")
+    # plot Greedy
+    ax2.plot(x_rt_greedy, y_rt_greedy,'g-')
+    ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+    # plot A* 
+    ax2.plot(x_rt_astar, y_rt_astar,'r-')
+    ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+    # plot axes and legend
+    ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
+                ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
+    ax2.legend(['Greedy', 'A*'])
+    fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope),
+                    ax=ax2,)
+    
+    ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
+    ax3.set(title="Terrain Classes Image")
+    ax3.imshow( cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB) )
+    # plot empty data and show key of colours and respective classes
+    [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
+                        for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
+    # ax3.legend()
 
-        ##### VELOCITY HEATMAP OUTPUT #####
-        ax4.set(title="Vehicle Velocity Heatmap")
-        # plot Greedy
-        ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
-        ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
-        # plot A* 
-        ax4.plot(x_rt_astar, y_rt_astar,'r-')
-        ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
-        ax4.legend(['Greedy', 'A*'])
-        
-        # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
-        vel2dArr = cv2.resize( vel2dArr, (XDIMENSION,YDIMENSION) )
-        fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
+    ##### VELOCITY HEATMAP OUTPUT #####
+    ax4.set(title="Vehicle Velocity Heatmap")
+    # plot Greedy
+    ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
+    ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+    # plot A* 
+    ax4.plot(x_rt_astar, y_rt_astar,'r-')
+    ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+    ax4.legend(['Greedy', 'A*'])
+    
+    # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
+    vel2dArr = cv2.resize( vel2dArr, (XDIMENSION,YDIMENSION) )
+    fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
 
-        plt.show()
-        ###################################################
+    plt.show()
+    ###################################################
