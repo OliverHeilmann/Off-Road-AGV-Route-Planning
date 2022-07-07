@@ -4,6 +4,8 @@ Code designed to ...
 # Images
 ![1 Greedy, A*, WeBots](imgs/greedyAstar3.png "1 Path Planning in Simulator")
 ![2 Greedy, A*, WeBots](imgs/greedyAstar2.png "2 Path Planning in Simulator")
+![1 Greedy, A*, WeBots, Terrain](imgs/Beacon2.1.png "1 Path Planning over Terrain Classes in Simulator")
+![2 Greedy, A*, WeBots, Terrain](imgs/Beacon2.2.png "2 Path Planning over Terrain Classes in Simulator")
 
 # Python Versions for WeBots
 WeBots Python doesn't currently support Arm86 architectures. Despite setting Python paths to the correct location, an Intel version (which runs on Rosetta) is required to be installed. Do the following to resolve any errors encountered during setup:
