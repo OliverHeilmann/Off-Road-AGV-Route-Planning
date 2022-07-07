@@ -1,3 +1,4 @@
+# the basics
 .ipynb_*
 .DS_Store
 __pycache__
@@ -6,6 +7,11 @@ dep
 .*.cache
 build
 *.json
+
+# don't push all textures
+textures/
+!textures/TerrainFeatures.png
+!textures/TerrainFeaturesScaled.png
 
 # ignore specific executables
 webots_moose/controllers/supervisor_draw_route/supervisor_draw_route

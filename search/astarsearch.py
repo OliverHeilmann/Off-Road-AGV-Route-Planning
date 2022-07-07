@@ -73,6 +73,7 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
     # (from start position), measured in total time taken to reach current position. Cost is calculated
     # using:
     #       Time = Distance / Speed
+    #______f(n)______ = _____g(n)_____ + ______________________________h(n)______________________________
     f_n = lambda node : node.path_cost + sqrt(  pow( (goal[0] - node.state[0]) * gridsize[0], 2 ) +         \
                                                 pow( (goal[1] - node.state[1]) * gridsize[1], 2 ) +         \
                                                 pow( maze[goal].elevation - maze[node.state].elevation, 2)) \
@@ -99,7 +100,7 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
         number_explored += 1
         explored.add(current_state)
         
-        # the four neigbouring locations (remember, can only traverse on 2D plane i.e. AGV cannot move 
+        # the four neighbour locations (remember, can only traverse on 2D plane i.e. AGV cannot move 
         # up or down so we exclude these even though our cost heuristic considers height)
         right = (current_state[0], current_state[1] + 1)
         left = (current_state[0], current_state[1] - 1)

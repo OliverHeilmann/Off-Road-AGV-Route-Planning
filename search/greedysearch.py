@@ -11,7 +11,7 @@ from math import sqrt
 from priorityqueue import PriorityQueue
 
 class Node:
-    def __init__(self, state, parent=None):
+    def __init__(self, state, parent=None, actual_cost_func=None):
         self.state = state
         self.parent = parent
 
