@@ -7,11 +7,11 @@ Modified from ...
 """
 import time
 import numpy as np
-from math import sqrt
+from math import sqrt, pow
 from priorityqueue import PriorityQueue
 
 class Node:
-    def __init__(self, state, parent=None, actual_cost_func=None):
+    def __init__(self, state, parent=None):
         self.state = state
         self.parent = parent
 

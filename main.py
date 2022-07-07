@@ -16,8 +16,10 @@ Description:
 
 By Oliver Heilmann
 """
+ # add 'search' directory to path (make sure you launch file from the working
+ # directory rather than sub-dirs)
 import sys
-sys.path.append('./search')     # add 'search' directory to path
+sys.path.append('./search')    
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -415,11 +417,12 @@ if __name__ == '__main__':
     # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
     clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
     solutionRoute_greedyIndex = greedyRoute3D(  clip(terrain.tiles),            # terrain tile classes 2D array
+                                                # maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
-                                            maxvelocity=MAX_VELOCITY,
+                                            maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
@@ -449,7 +452,7 @@ if __name__ == '__main__':
 
         # HEADER
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-        fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Vehicle Max Slope: {MAX_SLOPE_ANGLE} [rad])', fontsize=16)
+        fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE} rad, Max Velocity: {MAX_VELOCITY} Km/h)', fontsize=16)
         
         ##### ELEVATION HEATMAP OUTPUT #####
         ax1.set(title="Elevation Heatmap")
@@ -457,7 +460,8 @@ if __name__ == '__main__':
         ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
-        fig.colorbar( ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners), ax=ax1 )
+        fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners),
+                        ax=ax1,)
 
         ##### SLOPE HEATMAP OUTPUT #####
         ax2.set(title="Slope Heatmap")
@@ -471,18 +475,19 @@ if __name__ == '__main__':
         ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                     ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
         ax2.legend(['Greedy', 'A*'])
-        fig.colorbar( ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope), ax=ax2 )
+        fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope),
+                        ax=ax2,)
         
         ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
         ax3.set(title="Terrain Classes Image")
         ax3.imshow( cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB) )
         # plot empty data and show key of colours and respective classes
         [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
-                                    for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
+                            for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
         # ax3.legend()
 
         ##### IOP HEATMAP OUTPUT #####
-        ax4.set(title="IOP Heatmap")
+        ax4.set(title="Vehicle Velocity Heatmap")
         # plot Greedy
         ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
         ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')

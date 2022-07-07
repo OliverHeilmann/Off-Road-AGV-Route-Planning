@@ -5,7 +5,7 @@ Description:
 By Oliver Heilmann
 Modified from ...
 """
-import time, cv2
+import time
 import numpy as np
 from math import sqrt, pow
 from priorityqueue import PriorityQueue
