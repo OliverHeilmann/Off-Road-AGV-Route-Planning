@@ -56,7 +56,7 @@ USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise ro
 APPEARANCE = "TerrainFeatures"      # e.g. "SandyGround" with SCALE = 10, e.g. "CustomAppearance" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
-6
+
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
