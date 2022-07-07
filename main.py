@@ -16,8 +16,8 @@ Description:
 
 By Oliver Heilmann
 """
- # add 'search' directory to path (make sure you launch file from the working
- # directory rather than sub-dirs)
+# add 'search' directory to path (make sure you launch file from the working
+# directory rather than sub-dirs)
 import sys
 sys.path.append('./search')    
 
@@ -44,8 +44,8 @@ RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower v
 #### WEBOTS ELEVATION MAP PARAMS
 XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 1   # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1           # Number of corners to ignore for path planning (to not fall off edge of map)
+XSPACING = YSPACING = 1     # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
@@ -58,13 +58,23 @@ SCALE = 1                           # Scale of appearance image over texture (in
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 10    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+H = 19    # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+# x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+# y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-ADD_NOISE = True   # include additional noise?
-SAMPLES = 100        # Number of additional random samples used to generate heat map and terrain profile
+x_pts = [7, 13, 16, 24, 26, 29, 26, 21, 15, 10, 5, 6, 11, 18, 20, 17, 11, 4, 8, 10, 8, 4, 6, 7, 3, 6, 6, 7, 5, 28, 31, 35, 36, 47, 55, 58, 50, 43, 39, 38, 40, 45, 55, 65, 122, 95, 100, 96, 104, 116, 110, 109, 117, 115, 107, 98, 93, 92, 91, 100, 111, 107, 110, 59, 62, 59, 56, 59, 60, 62, 64, 69, 73, 78, 82, 88, 92, 92, 91, 80, 87, 87, 71, 62, 67, 75, 39, 43, 30, 19, 50, 36, 8, 25, 17, 54, 33, 31, 32, 38, 42, 45, 53, 57, 58, 60, 57, 60, 60, 62, 66, 70, 70, 65, 65, 93, 89, 95, 105, 108, 116, 119, 124, 124, 124, 119, 113, 109, 108, 101, 102, 109, 114, 117, 119, 115, 115, 117, 119, 120, 120, 121, 121, 101, 107, 114, 120, 122, 125, 123, 123, 118, 105, 113, 120, 120, 107, 109]
+y_pts = [35, 31, 38, 46, 50, 59, 71, 79, 87, 91, 93, 86, 76, 69, 61, 52, 45, 44, 50, 58, 68, 71, 63, 62, 57, 63, 57, 61, 67, 4, 17, 31, 34, 20, 10, 4, 6, 12, 22, 9, 5, 6, 16, 17, 13, 13, 20, 13, 2, 3, 11, 17, 21, 26, 28, 29, 33, 17, 3, 7, 10, 12, 13, 115, 102, 97, 83, 76, 65, 59, 58, 72, 76, 90, 100, 105, 112, 117, 118, 109, 118, 127, 123, 118, 113, 112, 107, 119, 118, 104, 114, 103, 123, 127, 116, 127, 110, 98, 93, 88, 84, 82, 86, 89, 93, 98, 77, 71, 67, 61, 58, 60, 63, 65, 72, 82, 84, 80, 76, 81, 90, 94, 88, 78, 68, 66, 63, 64, 59, 66, 69, 71, 80, 85, 76, 72, 73, 75, 73, 76, 76, 76, 76, 118, 123, 123, 121, 123, 123, 117, 115, 118, 113, 105, 104, 104, 110, 108]
+
+x_pts.extend(x_pts)
+y_pts.extend(y_pts)
+
+ADD_NOISE = False       # include additional noise?
+SAMPLES = 100           # Number of additional random samples used to generate heat map and terrain profile
+
+#### PATH PLANNING PARAMS
+START = (0,0)       # index value which agent starts at after including corner size
+END = (90,110)      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
 
@@ -417,13 +427,17 @@ if __name__ == '__main__':
     # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
     clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
     solutionRoute_greedyIndex = greedyRoute3D(  clip(terrain.tiles),            # terrain tile classes 2D array
-                                                # maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
+                                                maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                                start=START,                    # starting agent position
+                                                goal=END,                       # ending agent position
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
                                             maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
                                             maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                            start=START,                    # starting agent position
+                                            goal=END,                       # ending agent position
                                             gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
     # if a path exists then continue...

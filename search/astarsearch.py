@@ -155,11 +155,13 @@ def totalDistTime( route, maze, gridsize ):
         curr = step
     return round(total_Dist,2), round(total_Time,2)
 
-def astarRoute3D( terrain, maxvelocity=50, maxslope=100, gridsize=(1,1) ):
+def astarRoute3D( terrain, maxvelocity=50, maxslope=100, start=(0,0), goal=None, gridsize=(1,1) ):
     """Perform A* Search Algorithm on elevation map (using slopemap to determine obstacles) and return route as list."""
     starttime = time.time()
     final_node, number_explored = astar_search( maze = terrain,
                                                 maxvelocity = maxvelocity,
+                                                start = start,
+                                                goal = goal,
                                                 maxslope = maxslope,
                                                 gridsize = gridsize)
     endtime = round((time.time() - starttime), 2)
