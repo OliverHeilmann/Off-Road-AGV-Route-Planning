@@ -335,14 +335,14 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray ):
     """Save key Webots startup information in text file for C code."""
 
     # calculate translation values for vehicle (WeBots coordinate system)
-    tx = str(wpts[0][0] + XTRANSLATE + XSPACING)
-    ty = str(wpts[0][1] + YTRANSLATE + YSPACING)
+    tx = str(wpts[0][0] + XTRANSLATE + (3*XSPACING)/2)
+    ty = str(wpts[0][1] + YTRANSLATE + (3*YSPACING/2))
     tz = str(elev[CORNER_SIZE][CORNER_SIZE] + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
     index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
-    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + XSPACING),
-                                                    str(el[1] + YTRANSLATE + YSPACING),
+    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + (3*XSPACING)/2),
+                                                    str(el[1] + YTRANSLATE + (3*YSPACING/2)),
                                                     str(round(elev[ index(el[1]) ][ index(el[0]) ] + VEHICLE_HEIGHT/2,4)))
                                                     for el in wpts] )
 
@@ -486,7 +486,7 @@ if __name__ == '__main__':
                             for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
         # ax3.legend()
 
-        ##### IOP HEATMAP OUTPUT #####
+        ##### VELOCITY HEATMAP OUTPUT #####
         ax4.set(title="Vehicle Velocity Heatmap")
         # plot Greedy
         ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
@@ -495,6 +495,9 @@ if __name__ == '__main__':
         ax4.plot(x_rt_astar, y_rt_astar,'r-')
         ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
         ax4.legend(['Greedy', 'A*'])
+        
+        # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
+        vel2dArr = cv2.resize( vel2dArr, (XDIMENSION,YDIMENSION) )
         fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
 
         plt.show()
