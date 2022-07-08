@@ -362,10 +362,10 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
                                                     for el in wpts] )
 
     # Colour of terrain classes – output in the form {r g b vrf},{r g b vrf}...
-    classes_str = ",".join( ["{{{} {} {} {}}}".format(  i[1][0][0],
-                                                        i[1][0][1],
-                                                        i[1][0][2],
-                                                        i[1][-1]) 
+    classes_str = ",".join( ["{{{} {} {} {}}}".format(  i[1][0][0],         # red
+                                                        i[1][0][1],         # green
+                                                        i[1][0][2],         # blue
+                                                        round(0.5 * MAX_VELOCITY * ( 1 + i[1][-1]), 4)) # vehicle velocity
                             for i in trn.classes.items() if i[0] != "Slope"] )
 
     # structure of .wbo file
