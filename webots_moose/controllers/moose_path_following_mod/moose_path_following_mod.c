@@ -43,6 +43,18 @@ typedef struct _Vector {
   double v;
 } Vector;
 
+// custom struct to hold RGB values for downward facing camera on moose
+typedef struct _RGB {
+  int r;
+  int g;
+  int b;
+} RGB;
+
+// camera globals
+int image_width = 64;       // pixel value image width of cameraDown on moose vehicle
+int image_height = 64;      // pixel value image height of cameraDown on moose vehicle
+const unsigned char *image; //store image pointer here
+
 static WbDeviceTag cameraFront, cameraDown;
 static WbDeviceTag motors[8];
 static WbDeviceTag gps;
@@ -250,6 +262,24 @@ static Vector* vehicle_config ( int *target_point_size, Vector test_targets[] ) 
   return test_targets;
 }
 
+// Return average RGB values of input image as RGB structure format
+static RGB get_avg_rgb( const unsigned char *image ){
+  RGB rgb;  // initialise RGB struct
+  int px = image_width * image_height;
+  for (int x = 0; x < image_width; x++){
+    for (int y = 0; y < image_height; y++) {
+      rgb.r += wb_camera_image_get_red(image, image_width, x, y);
+      rgb.g += wb_camera_image_get_green(image, image_width, x, y);
+      rgb.b += wb_camera_image_get_blue(image, image_width, x, y);
+    }
+  }
+  // print results to console
+  printf("AVG: red=%d, green=%d, blue=%d\n",rgb.r/px, 
+                                            rgb.g/px,
+                                            rgb.b/px);
+  return rgb;
+}
+
 int main(int argc, char *argv[]) {
   // initialize webots communication
   wb_robot_init();
@@ -301,15 +331,15 @@ int main(int argc, char *argv[]) {
   // main loop
   while (wb_robot_step(TIME_STEP) != -1) {
     // refresh the camera views
-    wb_camera_get_image(cameraFront);
-    wb_camera_get_image(cameraDown);
+    wb_camera_get_image(cameraFront);   
+    image = wb_camera_get_image(cameraDown);  // store output to image pointer for processing
+
+    RGB A = get_avg_rgb( image );
 
     check_keyboard();
     if (autopilot)
       run_autopilot( &target_points_size, new_targets );
   }
-
   wb_robot_cleanup();
-
   return 0;
 }
