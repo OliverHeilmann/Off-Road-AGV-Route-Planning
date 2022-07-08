@@ -29,10 +29,10 @@
 #define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
 #define TIME_STEP 16
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
-// #define TARGET_POINTS_SIZE 11
-#define DISTANCE_TOLERANCE 1.5
-#define MAX_SPEED 7.0
-#define TURN_COEFFICIENT 4.0
+#define DISTANCE_TOLERANCE 1.5  // (default = 1.5)
+#define MAX_SPEED 7.0   // in radians (default = 7.0): Note that 26 radians with 25" diameter wheels is ~30km/h which is vehicle top speed
+#define TURN_COEFFICIENT 4.0   // (default = 4.0)
+// for XYSPACING = 20, DISTANCE_TOLERANCE 15, MAX_SPEED 26.0, TURN_COEFFICIENT 4.0
 
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
@@ -45,10 +45,6 @@ typedef struct _Vector {
 static WbDeviceTag motors[8];
 static WbDeviceTag gps;
 static WbDeviceTag compass;
-
-// static Vector targets[TARGET_POINTS_SIZE] = {
-//   {-49.0,-49.0},{-10.0,-10.0},{-10.0,-8.0},{-12.0,-6.0},{-12.0,-5.0},{-12.0,-3.0},{-12.0,0.0},{-13.0,1.0},{-13.0,5.0},{30.0,48.0},{48.0,48.0}
-// };
 
 static int current_target_index = 0;
 static bool autopilot = true;
@@ -186,7 +182,9 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
   // move the robot to the next target
   else {
     speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
+    if (speeds[LEFT] > 26.){ speeds[LEFT] = MAX_SPEED; } // max speed threshold
     speeds[RIGHT] = MAX_SPEED - M_PI - TURN_COEFFICIENT * beta;
+    if (speeds[RIGHT] > 26.){ speeds[RIGHT] = MAX_SPEED; } // max speed threshold
   }
 
   // set the motor speeds

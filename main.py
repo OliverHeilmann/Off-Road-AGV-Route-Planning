@@ -59,7 +59,7 @@ PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image 
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 10                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
-ELEVATION_SCALING = 3       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
+ELEVATION_SCALING = 2       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
 
 # x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 # y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
