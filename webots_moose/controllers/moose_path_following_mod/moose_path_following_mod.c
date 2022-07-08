@@ -53,7 +53,7 @@ typedef struct _RGB {
 
 // structure to contain all datatypes from vehicle config files
 typedef struct _Config {
-  Vector wpts;
+  Vector* wpts;
   RGB clss;
 } Config;
 
@@ -273,7 +273,7 @@ static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
 
   // setup config struct which is returned by function
   Config vehicle_config;
-  vehicle_config.wpts = *test_targets;
+  vehicle_config.wpts = test_targets;
   // vehicle_config.clss = test_targets;
   return vehicle_config;
 }
@@ -350,11 +350,11 @@ int main(int argc, char *argv[]) {
     wb_camera_get_image(cameraFront);   
     image = wb_camera_get_image(cameraDown);  // store output to image pointer for processing
 
-    RGB A = get_avg_rgb( image );
+    // RGB A = get_avg_rgb( image );
 
     check_keyboard();
     if (autopilot)
-      run_autopilot( &target_points_size, &vehicle_params.wpts );
+      run_autopilot( &target_points_size, vehicle_params.wpts );
   }
   wb_robot_cleanup();
   return 0;
