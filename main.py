@@ -344,7 +344,7 @@ def get_waypoints( route : np.ndarray ):
     wpts.append( (x_curr, y_curr) )
     return wpts
 
-def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray ):
+def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
     """Save key Webots startup information in text file for C code."""
 
     # calculate translation values for vehicle (WeBots coordinate system)
@@ -356,20 +356,31 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray ):
     index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
     wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + (3*XSPACING)/2),
                                                     str(el[1] + YTRANSLATE + (3*YSPACING/2)),
-                                                    str(round(elev[ index(el[1]) ][ index(el[0]) ] + VEHICLE_HEIGHT/2,4)))
+                                                    str(round(elev[ index(el[1]) ][ index(el[0]) ] + 
+                                                                                  VEHICLE_HEIGHT/2 + 
+                                                                                  0.2, 4))) # add offset to align with vehicle centre [m]
                                                     for el in wpts] )
+
+    # Colour of terrain classes – output in the form {r g b vrf},{r g b vrf}...
+    classes_str = ",".join( ["{{{} {} {} {}}}".format(  i[1][0][0],
+                                                        i[1][0][1],
+                                                        i[1][0][2],
+                                                        i[1][-1]) 
+                            for i in trn.classes.items() if i[0] != "Slope"] )
 
     # structure of .wbo file
     formatted =  """Vehicle Config File
 Vehicle {{
-translation {} {} {}
-rotation {} {} {} {}
-count {}
-waypoints {}
+    translation {} {} {}
+    rotation {} {} {} {}
+    count {}
+    waypoints {}
+    terrain {}
 }}"""   .format(   tx, ty, tz,
                 0, 0, -1, -0.85,
                 str(len(wpts)),
                 wpts_string,
+                classes_str,
             )
     # Save waypoints as text file usable in WeBots
     try:
@@ -404,7 +415,7 @@ if __name__ == '__main__':
             if x < H and y < H: del x_pts[incr], y_pts[incr]
 
     # Initialise terrain class 
-    terrain = Terrain( 1 )
+    terrain = Terrain( )
 
     # Create intensity 2D numpy array using user defined params
     print("[INFO]: Creating Elevation Map...")
@@ -457,7 +468,9 @@ if __name__ == '__main__':
         waypoints_astar = get_waypoints( route = solutionRoute_astar )
 
         # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        wbo_vehicle_config( elev = elevationCorners, wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar )
+        wbo_vehicle_config( elev = elevationCorners,
+                            wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
+                            trn = terrain )
 
         ################# CREATE FIGURES #################
         # reformat data to matplotlib readable version

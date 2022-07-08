@@ -38,6 +38,7 @@
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
 
+// vector contains du, dv coordinates for waypoint navigation
 typedef struct _Vector {
   double u;
   double v;
@@ -49,6 +50,12 @@ typedef struct _RGB {
   int g;
   int b;
 } RGB;
+
+// structure to contain all datatypes from vehicle config files
+typedef struct _Config {
+  Vector wpts;
+  RGB clss;
+} Config;
 
 // camera globals
 int image_width = 64;       // pixel value image width of cameraDown on moose vehicle
@@ -206,7 +213,7 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
 }
 
 // Open the vehicle configuration file and extract the translation and rotation values
-static Vector* vehicle_config ( int *target_point_size, Vector test_targets[] ) {
+static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
   // create vector to append waypoints to
   char * line = NULL;
   size_t len = 0;
@@ -259,7 +266,12 @@ static Vector* vehicle_config ( int *target_point_size, Vector test_targets[] ) 
     row++;
   }
   fclose(fp);
-  return test_targets;
+
+  // setup config struct which is returned by function
+  Config vehicle_config;
+  vehicle_config.wpts = *test_targets;
+  // vehicle_config.clss = test_targets;
+  return vehicle_config;
 }
 
 // Return average RGB values of input image as RGB structure format
@@ -287,7 +299,7 @@ int main(int argc, char *argv[]) {
   // setup webots vehicle params for terrain tests
   int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
   Vector targets[target_points_size];
-  Vector *new_targets = vehicle_config( &target_points_size, targets );
+  Config vehicle_params = vehicle_config( &target_points_size, targets );
 
   // initialize cameras
   cameraFront = wb_robot_get_device("cameraFront");
@@ -338,7 +350,7 @@ int main(int argc, char *argv[]) {
 
     check_keyboard();
     if (autopilot)
-      run_autopilot( &target_points_size, new_targets );
+      run_autopilot( &target_points_size, &vehicle_params.wpts );
   }
   wb_robot_cleanup();
   return 0;

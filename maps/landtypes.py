@@ -21,7 +21,7 @@ class LandTypes:
                         "Swamp"     : [ [12, 177, 222] , [-3, 162, 182], [27, 192, 262] ,  -0.8],
                         "Forest"    : [ [53, 187, 127] , [38, 172, 87] , [68, 202, 167] ,  -0.8],
                         "Orchard"   : [ [161, 58, 205] , [146, 43, 165], [176, 73, 245] ,  -0.5],
-                        "Slope"     : [ [            ] , [            ], [            ] ,  -0.4],
+                        "Slope"     : [ [            ] , [            ], [            ] ,  -0.4],   # KEEP THIS ONE LAST IN LIST!
                         }
     def get_type_keys( self, drop = None ):
         """Return all land type keys as a list of strings."""
