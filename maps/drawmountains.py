@@ -2,7 +2,7 @@
 import cv2
 
 # some relevant params from main.py
-XDIMENSION = YDIMENSION = 256       # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XDIMENSION = YDIMENSION = 128       # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 XSPACING = YSPACING = 1     # The spacing between nodes in x, y dir [meters]
 
 # path to terrain image

@@ -58,22 +58,20 @@ SCALE = 1                           # Scale of appearance image over texture (in
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
-H = 10                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
-ELEVATION_SCALING = 2       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
+H = 20                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
+ELEVATION_SCALING = 4       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
 
-x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
-y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
+# x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
+# y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
 
-# x_pts = [17, 22, 29, 37, 47, 51, 49, 45, 41, 35, 18, 12, 27, 7, 12, 6, 13, 16, 22, 26, 31, 37, 38, 38, 34, 32, 22, 17, 8, 5, 36, 28, 35, 40, 8, 14, 18, 22, 25, 27, 27, 28, 27, 26, 25, 20, 17, 15, 6, 12, 7, 14, 15, 17, 17, 18, 15, 11, 5, 4, 11, 15, 17, 20, 18, 8, 13, 13, 12, 8, 3, 3, 6, 6, 5, 4, 3, 3, 2, 3, 4, 9, 14, 20, 24, 30, 31, 31, 31, 36, 34, 18, 28, 33, 35, 38, 42, 46, 45, 44, 41, 84, 96, 108, 118, 127, 132, 135, 140, 149, 157, 170, 180, 189, 197, 206, 221, 232, 234, 219, 220, 221, 216, 210, 228, 222, 216, 208, 200, 195, 191, 185, 182, 179, 177, 171, 162, 158, 156, 151, 149, 147, 145, 143, 140, 138, 136, 135, 132, 130, 127, 122, 120, 112, 108, 102, 93, 87, 82, 84, 92, 98, 106, 111, 116, 120, 125, 126, 129, 133, 135, 139, 141, 143, 145, 155, 161, 169, 174, 180, 185, 190, 197, 201, 209, 218, 228, 227, 221, 220, 219, 214, 216, 217, 221, 219, 221, 213, 205, 215, 224, 230, 216, 206, 189]
-# y_pts = [79, 85, 90, 97, 104, 111, 122, 135, 147, 157, 170, 174, 167, 72, 75, 79, 84, 87, 90, 95, 100, 106, 115, 120, 136, 141, 153, 156, 163, 165, 132, 148, 125, 110, 155, 151, 147, 141, 137, 130, 129, 124, 120, 116, 109, 104, 100, 97, 90, 93, 99, 105, 106, 112, 120, 127, 132, 136, 145, 147, 143, 142, 140, 132, 123, 107, 111, 120, 126, 133, 139, 130, 126, 119, 112, 107, 102, 101, 95, 93, 83, 85, 90, 97, 100, 108, 117, 122, 123, 115, 109, 165, 159, 154, 141, 135, 126, 116, 109, 108, 101, 99, 102, 104, 108, 115, 126, 141, 159, 174, 181, 181, 171, 158, 152, 148, 148, 156, 153, 122, 122, 131, 137, 134, 138, 154, 157, 151, 153, 155, 158, 163, 168, 173, 176, 178, 182, 181, 179, 173, 170, 168, 164, 158, 153, 149, 141, 138, 130, 126, 120, 115, 111, 107, 105, 104, 103, 102, 102, 104, 106, 107, 109, 111, 113, 119, 126, 127, 133, 140, 145, 150, 161, 168, 172, 180, 182, 181, 177, 165, 161, 156, 152, 148, 144, 145, 147, 142, 132, 130, 133, 138, 145, 151, 143, 136, 136, 144, 148, 137, 138, 133, 136, 141, 158]
-# x_pts.extend(x_pts)
-# y_pts.extend(y_pts)
+x_pts = [3, 17, 26, 43, 37, 40, 32, 18, 6, 8, 26, 31, 21, 7, 15, 9, 32, 61, 66, 56, 54, 51, 50, 48, 45, 42, 43, 25, 35, 41, 62, 71, 79, 71, 64, 54, 43, 28, 23, 17, 6, 3, 12, 14, 22, 22, 19, 14, 6, 7, 35, 55, 81, 86, 91, 96, 105, 115, 121, 125, 111, 122, 124, 91, 104, 98, 56, 59, 62, 67, 72, 77, 87, 90, 95, 101, 106, 112, 117, 121, 122, 90, 83, 70, 88, 105, 100, 91, 81, 76, 78, 80, 75, 98, 96, 106, 118, 109, 115, 123, 124, 113, 126, 115, 98, 89, 100, 96, 117, 111, 100, 50,15, 17, 19]
+y_pts = [31, 32, 34, 54, 42, 70, 83, 95, 101, 42, 46, 66, 79, 88, 60, 70, 54, 86, 80, 93, 96, 100, 102, 105, 109, 114, 109, 108, 112, 97, 113, 118, 123, 127, 122, 119, 121, 120, 115, 116, 113, 107, 108, 104, 109, 112, 121, 123, 119, 118, 124, 125, 125, 96, 105, 117, 79, 85, 94, 99, 97, 105, 94, 113, 121, 123, 3, 9, 15, 23, 29, 32, 32, 31, 30, 26, 22, 16, 11, 5, 3, 9, 14, 7, 3, 4, 10, 19, 22, 19, 11, 6, 4, 3, 19, 51, 48, 67, 71, 74, 83, 77, 66, 65, 73, 67, 67, 51, 44, 46, 48, 64, 4, 7, 10]
 
 ADD_NOISE = False       # include additional noise?
 SAMPLES = 100           # Number of additional random samples used to generate heat map and terrain profile
 
 #### PATH PLANNING PARAMS
-START = (0,0)       # index value which agent starts at after including corner size
+START = (7,90)       # index value which agent starts at after including corner size
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -259,7 +257,7 @@ boundingObject USE TERRAIN_MAP
             cv2.destroyAllWindows()
 
     def iop_map( self, *args, **kwargs ):
-
+        """Calculate vehicle velocities based on vegetation roughness factors presented in literature."""
         # get % coverage area of feature within input tile
         getPctArea = lambda mask : (cv2.countNonZero(mask) * tile.image.shape[-1]) / tile.image.size
 
@@ -290,11 +288,9 @@ boundingObject USE TERRAIN_MAP
         # A += abs(min(iops))
         # B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
         # B -= 1
-
         # AA = iops + abs(min(iops))
         # BB = np.linalg.norm( AA )
         # norm=AA/BB
-
         velocities = [obj.velocity for row in self.tiles for obj in row]
 
         # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
@@ -350,7 +346,7 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
     # calculate translation values for vehicle (WeBots coordinate system)
     tx = str(wpts[0][0] + XTRANSLATE + (3*XSPACING)/2)
     ty = str(wpts[0][1] + YTRANSLATE + (3*YSPACING/2))
-    tz = str(elev[CORNER_SIZE][CORNER_SIZE] + VEHICLE_HEIGHT/2)
+    tz = str(elev[START[0] + CORNER_SIZE][ START[1] + CORNER_SIZE] + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
     index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
@@ -436,53 +432,55 @@ if __name__ == '__main__':
     print("[INFO]: Calculating Index of Passability...")
     iop2dArr, vel2dArr = terrain.iop_map( )
 
-    # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
-    # Don't pass border values as their slopes are not accurate due to kerneling method. 
-    # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
-    clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
-    solutionRoute_greedyIndex = greedyRoute3D(  clip(terrain.tiles),            # terrain tile classes 2D array
+    try:
+        # create empty lists to overwrite if paths are found
+        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = []
+        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = []
+
+        # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
+        # Don't pass border values as their slopes are not accurate due to kerneling method. 
+        # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
+        clip = lambda array2D : array2D[CORNER_SIZE:-CORNER_SIZE, CORNER_SIZE:-CORNER_SIZE]
+        solutionRoute_greedyIndex = greedyRoute3D(  clip(terrain.tiles),            # terrain tile classes 2D array
+                                                    maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
+                                                    maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                                    start=START,                    # starting agent position
+                                                    goal=END,                       # ending agent position
+                                                    gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+
+        solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
                                                 maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
                                                 maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
                                                 start=START,                    # starting agent position
                                                 goal=END,                       # ending agent position
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
-    solutionRoute_astarIndex = astarRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
-                                            maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
-                                            maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
-                                            start=START,                    # starting agent position
-                                            goal=END,                       # ending agent position
-                                            gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+        # if a path exists then continue...
+        if solutionRoute_greedyIndex and solutionRoute_astarIndex:
+            # shift results to account for lambda border clipping step shown above. Also modify
+            # results to show solution in absolute coordinates rather than index values of the input
+            transform_to_webots = lambda the_list : (np.array(the_list) + (CORNER_SIZE-1)) * XSPACING
+            solutionRoute_greedy = transform_to_webots( solutionRoute_greedyIndex )
+            solutionRoute_astar  = transform_to_webots( solutionRoute_astarIndex  )
 
-    # if a path exists then continue...
-    if solutionRoute_greedyIndex and solutionRoute_astarIndex:
-        # shift results to account for lambda border clipping step shown above. Also modify
-        # results to show solution in absolute coordinates rather than index values of the input
-        transform_to_webots = lambda the_list : (np.array(the_list) + (CORNER_SIZE-1)) * XSPACING
-        solutionRoute_greedy = transform_to_webots( solutionRoute_greedyIndex )
-        solutionRoute_astar  = transform_to_webots( solutionRoute_astarIndex  )
+            # Make set of waypoints for vehicle based on solution
+            # Returns as [ (x1,y1), (x2,y2) ... ]
+            waypoints_greedy = get_waypoints( route = solutionRoute_greedy )
+            waypoints_astar = get_waypoints( route = solutionRoute_astar )
 
-        # Make set of waypoints for vehicle based on solution
-        # Returns as [ (x1,y1), (x2,y2) ... ]
-        waypoints_greedy = get_waypoints( route = solutionRoute_greedy )
-        waypoints_astar = get_waypoints( route = solutionRoute_astar )
+            # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
+            wbo_vehicle_config( elev = elevationCorners,
+                                wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
+                                trn = terrain )
 
-        # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-        wbo_vehicle_config( elev = elevationCorners,
-                            wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
-                            trn = terrain )
+            ################# CREATE FIGURES #################
+            # reformat data to matplotlib readable version
+            x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
+            x_wpts_greedy, y_wpts_greedy = get_xys( waypoints_greedy )
 
-        ################# CREATE FIGURES #################
-        # reformat data to matplotlib readable version
-        x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
-        x_wpts_greedy, y_wpts_greedy = get_xys( waypoints_greedy )
-
-        x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
-        x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
-    else:
-        # no path, create empty lists
-        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = []
-        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = []
+            x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
+            x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
+    except: pass    # continue silently after an error
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
