@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <webots/camera.h>
 #include <webots/compass.h>
 #include <webots/gps.h>
 #include <webots/keyboard.h>
@@ -42,6 +43,7 @@ typedef struct _Vector {
   double v;
 } Vector;
 
+static WbDeviceTag cameraFront, cameraDown;
 static WbDeviceTag motors[8];
 static WbDeviceTag gps;
 static WbDeviceTag compass;
@@ -257,6 +259,12 @@ int main(int argc, char *argv[]) {
   Vector targets[target_points_size];
   Vector *new_targets = vehicle_config( &target_points_size, targets );
 
+  // initialize cameras
+  cameraFront = wb_robot_get_device("cameraFront");
+  cameraDown = wb_robot_get_device("cameraDown");
+  wb_camera_enable(cameraFront, 2 * TIME_STEP);
+  wb_camera_enable(cameraDown, 2 * TIME_STEP);
+
   // print user instructions
   printf("You can drive this robot:\n");
   printf("Select the 3D window and use cursor keys:\n");
@@ -292,6 +300,10 @@ int main(int argc, char *argv[]) {
 
   // main loop
   while (wb_robot_step(TIME_STEP) != -1) {
+    // refresh the camera views
+    wb_camera_get_image(cameraFront);
+    wb_camera_get_image(cameraDown);
+
     check_keyboard();
     if (autopilot)
       run_autopilot( &target_points_size, new_targets );

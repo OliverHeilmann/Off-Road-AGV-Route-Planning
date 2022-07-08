@@ -26,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.2382905530001518 0.2417241564602802 0.9406311947487431 1.7256447485852442
-  position 5.958586927973984 -77.49072824304554 42.800712566112985
+  orientation -0.1957174369023149 0.18247731319045918 0.9635334530067855 1.6778002625539137
+  position 3.9091523905992833 -62.69394258608354 29.90579906582885
   near 1
   follow "moose"
 }
@@ -90,6 +90,17 @@ DEF MOOSE Moose {
   rotation -0.17944105748033282 0.1417470454058144 0.9735033035429627 0.5293334021982316
   controller "moose_path_following_mod"
   bodySlot [
+    Camera {
+      rotation 0 1 0 1.57
+      name "cameraDown"
+      fieldOfView 0.7
+    }
+    Camera {
+      translation 0 0 0.89
+      name "cameraFront"
+      width 1920
+      height 1080
+    }
     DEF TARGET Transform {
     }
     Compass {
