@@ -260,6 +260,10 @@ static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
           count++;
         }
       }
+      // row for getting the terrain class colours
+      if ( row == 6 && col == 1){
+        printf("%s\n", ptr);
+      }
       ptr = strtok(NULL, " ");
       col++;
     }
