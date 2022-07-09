@@ -212,8 +212,10 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
   else {
     speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
     if (speeds[LEFT] > 26. || speeds[LEFT] < -26. ){ speeds[LEFT] = MAX_SPEED; } // max speed threshold
+    else if (speeds[LEFT] < -26. ){ speeds[LEFT] = -MAX_SPEED; } // min speed threshold
     speeds[RIGHT] = MAX_SPEED - M_PI - TURN_COEFFICIENT * beta;
     if (speeds[RIGHT] > 26. || speeds[RIGHT] < -26. ){ speeds[RIGHT] = MAX_SPEED; } // max speed threshold
+    else if (speeds[RIGHT] < -26. ){ speeds[RIGHT] = -MAX_SPEED; } // max speed threshold
   }
   // set the motor speeds
   robot_set_speed(speeds[LEFT], speeds[RIGHT]);
