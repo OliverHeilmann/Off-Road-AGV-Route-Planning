@@ -283,14 +283,8 @@ boundingObject USE TERRAIN_MAP
             # calculate estimated velocity at tile using IOP
             tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + tile.iop )
 
+        # get all tile velocities and put into list
         iops = [obj.iop for row in self.tiles for obj in row]
-        # A = np.array(iops)
-        # A += abs(min(iops))
-        # B = pow( [A] / np.linalg.norm([A], axis=-1)[:, np.newaxis], 2 )
-        # B -= 1
-        # AA = iops + abs(min(iops))
-        # BB = np.linalg.norm( AA )
-        # norm=AA/BB
         velocities = [obj.velocity for row in self.tiles for obj in row]
 
         # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1

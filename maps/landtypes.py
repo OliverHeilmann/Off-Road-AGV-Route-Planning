@@ -7,14 +7,14 @@ By Oliver Heilmann
 """
 import numpy as np
 import cv2
-import colorsys as csys
 
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
     def __init__( self, ):
-        # HSV colours and their ranges as [type : [mid, lower, upper, VRF]]
+        # HSV colours and their ranges as [type : [rgb, mid, lower, upper, VRF]]
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
+        # ------TYPE--------------RGB------------MID HSV--------LOWER HSV-------UPPER HSV ------VRF--
         self.classes = {
             "Firebrake" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40] , [15, 15, 40]   ,   0.3],
             "Open_Area" : [ [159, 206, 99] , [43, 132, 206] , [28, 117, 166], [58, 147, 246] ,   0.5],   # No white spaces!
