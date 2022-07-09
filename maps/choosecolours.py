@@ -21,12 +21,14 @@ pixel = (20,60,80) # some default
 def pick_color(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:
         pixel = image_hsv[y,x]
+        rgbimg = cv2.cvtColor(image_hsv, cv2.COLOR_HSV2RGB)
+        rgbpixel = rgbimg[y,x]
 
         #you might want to adjust the ranges(+-10, etc):
         pct = 15
         upper =  np.array([pixel[0] + pct, pixel[1] + pct, pixel[2] + 40])
         lower =  np.array([pixel[0] - pct, pixel[1] - pct, pixel[2] - 40])
-        print(f"{list(pixel)}, {list(lower)}, {list(upper)}")
+        print(f"MidRGB: {list(rgbpixel)}, MidHSV: {list(pixel)}, LowerHSV: {list(lower)}, UpperHSV: {list(upper)}")
 
         image_mask = cv2.inRange(image_hsv,lower,upper)
         cv2.imshow("mask",image_mask)

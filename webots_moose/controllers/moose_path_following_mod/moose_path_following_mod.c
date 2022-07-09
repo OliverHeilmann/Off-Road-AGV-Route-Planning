@@ -61,8 +61,8 @@ typedef struct _Config {
 } Config;
 
 // camera globals
-int image_width = 64;       // pixel value image width of cameraDown on moose vehicle
-int image_height = 64;      // pixel value image height of cameraDown on moose vehicle
+int image_width = 2;       // pixel value image width of cameraDown on moose vehicle
+int image_height = 2;      // pixel value image height of cameraDown on moose vehicle
 int terrain_classes = 0;    // number of terrain classes to check through
 const unsigned char *image; //store image pointer here
 
@@ -309,10 +309,11 @@ static TerrainRGB get_avg_rgb( const unsigned char *image ){
     }
   }
   // calculate average values
+  int adj = 0;
   int px = image_width * image_height;
-  trnrgb.r = trnrgb.r/px;
-  trnrgb.g = trnrgb.g/px;
-  trnrgb.b = trnrgb.g/px;
+  trnrgb.r = (adj + trnrgb.r)/px;
+  trnrgb.g = (adj + trnrgb.g)/px;
+  trnrgb.b = (adj + trnrgb.b)/px;
   return trnrgb;
 }
 
@@ -336,16 +337,24 @@ static int get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain
       best = diff;
     }
   }
-  printf("%s\n",terrain);
+  printf("-->Type: %s\n\n\n",terrain);
+  // printf("AVG: red=%d, green=%d, blue=%d\n",values.r, 
+  //                                     values.g,
+  //                                     values.b);
+  // printf("%s: red=%d, green=%d, blue=%d\n", terrain_types[i].trn,
+  //                                         terrain_types[i].r, 
+  //                                         terrain_types[i].g,
+  //                                         terrain_types[i].b);
   // printf("%f\n",velocity);
   // printf("%s\n", terrain_types[i].trn);
   // printf("%d\n", i);
-  // print results to console
-  // printf("AVG: red=%d, green=%d, blue=%d\n",trnrgb.r, 
-  //                                           trnrgb.g,
-  //                                           trnrgb.b);
+  // // print results to console
+  // printf("AVG: red=%d, green=%d, blue=%d\n",values.r, 
+  //                                           values.g,
+  //                                           values.b);
   return 0;
 }
+
 
 int main(int argc, char *argv[]) {
   // initialize webots communication

@@ -94,6 +94,8 @@ DEF MOOSE Moose {
       rotation 0 1 0 1.57
       name "cameraDown"
       fieldOfView 0.7
+      width 2
+      height 2
     }
     Camera {
       translation 0 0 0.89
