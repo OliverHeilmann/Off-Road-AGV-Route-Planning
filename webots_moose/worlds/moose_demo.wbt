@@ -26,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.1957174369023149 0.18247731319045918 0.9635334530067855 1.6778002625539137
-  position 4.981526993704081 -77.98766707716254 36.40220525751805
+  orientation -0.30999501205909386 0.2948718291687563 0.9038549091868419 1.72133557442287
+  position 4.7485550288163765 -79.0472564210926 61.18801533594497
   near 1
   follow "moose"
 }
@@ -91,6 +91,7 @@ DEF MOOSE Moose {
   controller "moose_path_following_mod"
   bodySlot [
     Camera {
+      translation 0 0 -0.3
       rotation 0 1 0 1.57
       name "cameraDown"
       fieldOfView 0.7
@@ -125,7 +126,7 @@ CardboardBox {
   size 1.2 0.6 1
 }
 CardboardBox {
-  translation 0.37456796387561053 -34.074344036015866 0.30908350988383304
+  translation 0.21122 -33.9126 0.3094
   rotation -0.282660009010747 0.677738519969735 0.678803224694224 3.692686917124235
   name "cardboard box(2)"
   size 1.2 0.6 1

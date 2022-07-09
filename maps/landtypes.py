@@ -16,7 +16,7 @@ class LandTypes:
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
         self.classes = {
-            "Firebrake" : [ [117, 112, 112], [0, 9, 117]    , [-15, -6, 77] , [15, 24, 157]  ,   0.3],
+            "Firebrake" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40] , [15, 15, 40]   ,   0.3],
             "Open_Area" : [ [159, 206, 99] , [43, 132, 206] , [28, 117, 166], [58, 147, 246] ,   0.5],   # No white spaces!
             "River"     : [ [88, 195, 249] , [100, 164, 249], [85, 149, 209], [115, 179, 289],  -1.0],
             "Stream"    : [ [155, 252, 226], [82, 98, 252]  , [67, 83, 212] , [97, 113, 292] ,  -0.8],
