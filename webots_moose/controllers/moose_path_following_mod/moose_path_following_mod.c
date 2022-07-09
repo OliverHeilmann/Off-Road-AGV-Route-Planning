@@ -44,17 +44,20 @@ typedef struct _Vector {
   double v;
 } Vector;
 
-// custom struct to hold RGB values for downward facing camera on moose
-typedef struct _RGB {
+// custom struct to hold RGB values for downward facing camera on moose. Note: it can
+// store corresponding velocities for colours (which are used for terrain classes)
+typedef struct _TerrainRGB {
+  char trn[50];
   int r;
   int g;
   int b;
-} RGB;
+  double vel;
+} TerrainRGB;
 
 // structure to contain all datatypes from vehicle config files
 typedef struct _Config {
   Vector* wpts;
-  RGB clss;
+  TerrainRGB* trns;
 } Config;
 
 // camera globals
@@ -213,7 +216,11 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
 }
 
 // Open the vehicle configuration file and extract the translation and rotation values
-static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
+static Config vehicle_config ( int *target_points_size ) {
+  // setup Waypoint vector and Terrain struct to add values to
+  Vector test_targets[*target_points_size];
+  TerrainRGB terrain_types[*target_points_size];
+  
   // create vector to append waypoints to
   char * line = NULL;
   size_t len = 0;
@@ -227,14 +234,10 @@ static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
   while ( (read = getline(&line, &len, fp)) != -1 ){
     // loop through all the words in line
     char *ptr = strtok(line, " ");
-    
     col = 0;
     while ( ptr != NULL ){
       // row for getting the length of waypoints
-      if ( row == 4  && col == 1){
-        *target_point_size =  atoi(ptr);
-        memset( test_targets, 0, *target_point_size*sizeof(int) );
-      }
+      if ( row == 4  && col == 1){ memset( test_targets, 0, atoi(ptr)*sizeof(int) ); }
       // row for getting the waypoints
       if ( row == 5 && col == 1){
         double u, v;
@@ -260,9 +263,29 @@ static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
           count++;
         }
       }
+      // set memory size of terrain type classes
+      if ( row == 6  && col == 1){ memset( terrain_types, 0, atoi(ptr)*sizeof(int) ); }
       // row for getting the terrain class colours
-      if ( row == 6 && col == 1){
-        printf("%s\n", ptr);
+      if ( row == 7 && col == 1){
+
+        int el = 0;
+        int i = 0;
+        TerrainRGB temp;
+
+        char * token = strtok(ptr, "{},");
+        while( token != NULL ) {
+          // printf("%s\n", token);
+          if (i == 0){ strcpy(temp.trn, token); }
+          else if (i == 1){ temp.r   = atof(token); }
+          else if (i == 2){ temp.g   = atof(token); }
+          else if (i == 3){ temp.b   = atof(token); }
+          else if (i == 4){ temp.vel = atof(token);
+                            i = -1;                     // reset counter       
+                            terrain_types[el] = temp;   // add temp TerrainRGB struct to terrain_types super-struct
+                            el++;} 
+          token = strtok(NULL, "{},");
+          i++;
+        }
       }
       ptr = strtok(NULL, " ");
       col++;
@@ -274,26 +297,26 @@ static Config vehicle_config ( int *target_point_size, Vector test_targets[] ) {
   // setup config struct which is returned by function
   Config vehicle_config;
   vehicle_config.wpts = test_targets;
-  // vehicle_config.clss = test_targets;
+  vehicle_config.trns = terrain_types;
   return vehicle_config;
 }
 
-// Return average RGB values of input image as RGB structure format
-static RGB get_avg_rgb( const unsigned char *image ){
-  RGB rgb;  // initialise RGB struct
+// Return average RGB values of input image as TerrainRGB structure format
+static TerrainRGB get_avg_rgb( const unsigned char *image ){
+  TerrainRGB trnrgb;  // initialise RGB struct
   int px = image_width * image_height;
   for (int x = 0; x < image_width; x++){
     for (int y = 0; y < image_height; y++) {
-      rgb.r += wb_camera_image_get_red(image, image_width, x, y);
-      rgb.g += wb_camera_image_get_green(image, image_width, x, y);
-      rgb.b += wb_camera_image_get_blue(image, image_width, x, y);
+      trnrgb.r += wb_camera_image_get_red(image, image_width, x, y);
+      trnrgb.g += wb_camera_image_get_green(image, image_width, x, y);
+      trnrgb.b += wb_camera_image_get_blue(image, image_width, x, y);
     }
   }
   // print results to console
-  printf("AVG: red=%d, green=%d, blue=%d\n",rgb.r/px, 
-                                            rgb.g/px,
-                                            rgb.b/px);
-  return rgb;
+  printf("AVG: red=%d, green=%d, blue=%d\n",trnrgb.r/px, 
+                                            trnrgb.g/px,
+                                            trnrgb.b/px);
+  return trnrgb;
 }
 
 int main(int argc, char *argv[]) {
@@ -302,8 +325,7 @@ int main(int argc, char *argv[]) {
 
   // setup webots vehicle params for terrain tests
   int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
-  Vector targets[target_points_size];
-  Config vehicle_params = vehicle_config( &target_points_size, targets );
+  Config vehicle_params = vehicle_config( &target_points_size );
 
   // initialize cameras
   cameraFront = wb_robot_get_device("cameraFront");
@@ -350,7 +372,7 @@ int main(int argc, char *argv[]) {
     wb_camera_get_image(cameraFront);   
     image = wb_camera_get_image(cameraDown);  // store output to image pointer for processing
 
-    // RGB A = get_avg_rgb( image );
+    // TerrainRGB A = get_avg_rgb( image );
 
     check_keyboard();
     if (autopilot)

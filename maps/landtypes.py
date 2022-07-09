@@ -7,6 +7,7 @@ By Oliver Heilmann
 """
 import numpy as np
 import cv2
+import colorsys as csys
 
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
@@ -15,14 +16,23 @@ class LandTypes:
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
         self.classes = {"Firebrake" : [ [0, 9, 117]    , [-15, -6, 77] , [15, 24, 157]  ,   0.3],
-                        "Open Area" : [ [43, 132, 206] , [28, 117, 166], [58, 147, 246] ,   0.5],
+                        "Open_Area" : [ [43, 132, 206] , [28, 117, 166], [58, 147, 246] ,   0.5],   # No white spaces!
                         "River"     : [ [100, 164, 249], [85, 149, 209], [115, 179, 289],  -1.0],
                         "Stream"    : [ [82, 98, 252]  , [67, 83, 212] , [97, 113, 292] ,  -0.8],
                         "Swamp"     : [ [12, 177, 222] , [-3, 162, 182], [27, 192, 262] ,  -0.8],
                         "Forest"    : [ [53, 187, 127] , [38, 172, 87] , [68, 202, 167] ,  -0.8],
                         "Orchard"   : [ [161, 58, 205] , [146, 43, 165], [176, 73, 245] ,  -0.5],
-                        "Slope"     : [ [            ] , [            ], [            ] ,  -0.4],   # KEEP THIS ONE LAST IN LIST!
+                        "Slope"     : [ [            ] , [            ], [            ] ,  -0.4],
                         }
+
+    def get_RGB_WeBots( self, maxvel = 30 ):
+        """Returns the Terrain type, mid colour in RBG and the VRF as dictionary"""
+        return { item[0]:[  (np.array(csys.hsv_to_rgb(  item[1][0][0]/255,
+                                                        item[1][0][1]/255,
+                                                        item[1][0][2]/255))*255).astype(int),   # HSV to RGB 
+                            round(0.5 * maxvel * ( 1 + item[1][-1]), 4) ]                       # vehicle velocity
+                            for item in self.classes.items() if item[0] != "Slope" }
+
     def get_type_keys( self, drop = None ):
         """Return all land type keys as a list of strings."""
         keys = list(self.classes.keys())

@@ -59,7 +59,7 @@ PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image 
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 20                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
-ELEVATION_SCALING = 4       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
+ELEVATION_SCALING = 3       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
 
 # x_pts = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,75,75,75,75,80,80,80,80,80,80,80,80,45,45,45,45,45,45,45,45]  # seed x points for elevation locations
 # y_pts = [10,10,10,20,20,20,30,30,30,40,40,40,50,50,50,85,75,80,80,80,92,35,35,35,35,35,35,35,35,76,67,67,32,45,67]  # seed y points for elevation locations
@@ -357,25 +357,31 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
                                                                                   0.2, 4))) # add offset to align with vehicle centre [m]
                                                     for el in wpts] )
 
-    # Colour of terrain classes – output in the form {r g b vrf},{r g b vrf}...
-    classes_str = ",".join( ["{{{} {} {} {}}}".format(  i[1][0][0],         # red
-                                                        i[1][0][1],         # green
-                                                        i[1][0][2],         # blue
-                                                        round(0.5 * MAX_VELOCITY * ( 1 + i[1][-1]), 4)) # vehicle velocity
-                            for i in trn.classes.items() if i[0] != "Slope"] )
+    # Get Terrain Class : [Mid RGB, Velocity] from trn object
+    trnWebots = trn.get_RGB_WeBots( maxvel = MAX_VELOCITY )
+
+    # Colour of terrain classes – output in the form {terrain_type,r,g,b,vrf},{terrain_type,r,g,b,vrf}...
+    classes_str = ",".join( ["{{{},{},{},{},{}}}".format(   i[0],               # terrain class
+                                                            i[1][0][0],         # red
+                                                            i[1][0][1],         # green
+                                                            i[1][0][2],         # blue
+                                                            i[1][-1])           # vehicle velocity
+                            for i in trnWebots.items()] )
 
     # structure of .wbo file
     formatted =  """Vehicle Config File
 Vehicle {{
     translation {} {} {}
     rotation {} {} {} {}
-    count {}
+    wpts_count {}
     waypoints {}
+    trn_count {}
     terrain {}
 }}"""   .format(   tx, ty, tz,
                 0, 0, -1, -0.85,
                 str(len(wpts)),
                 wpts_string,
+                str(len(trnWebots.keys())),
                 classes_str,
             )
     # Save waypoints as text file usable in WeBots
@@ -480,7 +486,7 @@ if __name__ == '__main__':
 
             x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
             x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
-    except: pass    # continue silently after an error
+    except: pass # continue silently after an error
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
