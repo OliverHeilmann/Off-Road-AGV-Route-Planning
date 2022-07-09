@@ -3,7 +3,7 @@ DEF TERRAIN Solid {
     translation -63.5 -63.5 0
     children [
         Shape {
-            appearance TerrainFeatures {
+            appearance TerrainMatte {
                 textureTransform TextureTransform {
                 scale 1 1
             }

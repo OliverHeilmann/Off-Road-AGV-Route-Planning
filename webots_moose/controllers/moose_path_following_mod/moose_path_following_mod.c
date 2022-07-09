@@ -63,6 +63,7 @@ typedef struct _Config {
 // camera globals
 int image_width = 64;       // pixel value image width of cameraDown on moose vehicle
 int image_height = 64;      // pixel value image height of cameraDown on moose vehicle
+int terrain_classes = 0;    // number of terrain classes to check through
 const unsigned char *image; //store image pointer here
 
 static WbDeviceTag cameraFront, cameraDown;
@@ -92,6 +93,7 @@ static void robot_set_speed(double left, double right) {
   }
 }
 
+// get keyboard inputs, swap between manual and autopilot modes
 static void check_keyboard() {
   double speeds[2] = {0.0, 0.0};
 
@@ -160,8 +162,7 @@ static void minus(Vector *v, const Vector *const v1, const Vector *const v2) {
   v->v = v1->v - v2->v;
 }
 
-// autopilot
-// pass trough the predefined target positions
+// autopilot: pass trough the predefined target positions
 static void run_autopilot( int *target_points_size, Vector *new_targets ) {
   // prepare the speed array
   double speeds[2] = {0.0, 0.0};
@@ -260,7 +261,8 @@ static Config* vehicle_config ( int *target_points_size ) {
         }
       }
       // set memory size of terrain type classes
-      if ( row == 6  && col == 1){ memset( terrain_types, 0, atoi(ptr)*sizeof(int) ); }
+      if ( row == 6  && col == 1){ memset( terrain_types, 0, atoi(ptr)*sizeof(int) ); 
+                                   terrain_classes = atoi(ptr);}  // save size of terrain type classes array
       // row for getting the terrain class colours
       if ( row == 7 && col == 1){
         int el = 0;
@@ -297,8 +299,8 @@ static Config* vehicle_config ( int *target_points_size ) {
 
 // Return average RGB values of input image as TerrainRGB structure format
 static TerrainRGB get_avg_rgb( const unsigned char *image ){
-  TerrainRGB trnrgb;  // initialise RGB struct
-  int px = image_width * image_height;
+  TerrainRGB trnrgb;    // initialise RGB struct
+  trnrgb.r = 0; trnrgb.g = 0; trnrgb.b = 0; // assign zero value to add to
   for (int x = 0; x < image_width; x++){
     for (int y = 0; y < image_height; y++) {
       trnrgb.r += wb_camera_image_get_red(image, image_width, x, y);
@@ -306,11 +308,43 @@ static TerrainRGB get_avg_rgb( const unsigned char *image ){
       trnrgb.b += wb_camera_image_get_blue(image, image_width, x, y);
     }
   }
-  // print results to console
-  printf("AVG: red=%d, green=%d, blue=%d\n",trnrgb.r/px, 
-                                            trnrgb.g/px,
-                                            trnrgb.b/px);
+  // calculate average values
+  int px = image_width * image_height;
+  trnrgb.r = trnrgb.r/px;
+  trnrgb.g = trnrgb.g/px;
+  trnrgb.b = trnrgb.g/px;
   return trnrgb;
+}
+
+static int get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain_types ){
+  // get average image colour in RGB
+  TerrainRGB values = get_avg_rgb( image );
+
+  // loop through all classes to see which one is most similar to current avg colour
+  int diff;
+  int best = 255 * 3; // max difference it could be
+  char terrain[50];
+  double velocity;
+  for (int i = 0; i < terrain_classes; i++) {
+    // calculate difference between current avg colour and terrain colour
+    diff =  abs(values.r - terrain_types[i].r) +
+            abs(values.g - terrain_types[i].g) +
+            abs(values.b - terrain_types[i].b);
+    if (diff < best) {
+      strcpy(terrain, terrain_types[i].trn);
+      velocity = terrain_types[i].vel;
+      best = diff;
+    }
+  }
+  printf("%s\n",terrain);
+  // printf("%f\n",velocity);
+  // printf("%s\n", terrain_types[i].trn);
+  // printf("%d\n", i);
+  // print results to console
+  // printf("AVG: red=%d, green=%d, blue=%d\n",trnrgb.r, 
+  //                                           trnrgb.g,
+  //                                           trnrgb.b);
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -366,7 +400,9 @@ int main(int argc, char *argv[]) {
     wb_camera_get_image(cameraFront);   
     image = wb_camera_get_image(cameraDown);  // store output to image pointer for processing
 
-    // TerrainRGB A = get_avg_rgb( image );
+    // from input image, get vehicle velocity (determined by colour in frame corresponding 
+    // to a specific predefined terrain class)
+    get_vehicle_velocity( image, vehicle_params->trns );
 
     check_keyboard();
     if (autopilot)
