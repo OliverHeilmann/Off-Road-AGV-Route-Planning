@@ -216,7 +216,7 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
 }
 
 // Open the vehicle configuration file and extract the translation and rotation values
-static Config vehicle_config ( int *target_points_size ) {
+static Config* vehicle_config ( int *target_points_size ) {
   // setup Waypoint vector and Terrain struct to add values to
   Vector test_targets[*target_points_size];
   TerrainRGB terrain_types[*target_points_size];
@@ -245,9 +245,7 @@ static Config vehicle_config ( int *target_points_size ) {
         char * token = strtok(ptr, "{},");
         while( token != NULL ) {
           // if even, set value to u
-          if (count == 0){
-            u = atof(token);
-          }
+          if (count == 0){ u = atof(token); }
           // if odd then set value to v, then push to targets
           else if (count == 1) {
             v = atof(token);
@@ -256,9 +254,7 @@ static Config vehicle_config ( int *target_points_size ) {
             step++;
           }
           // reset counter i.e. ignore waypoint heights
-          else {
-            count = -1;
-          }
+          else { count = -1; }
           token = strtok(NULL, "{},");
           count++;
         }
@@ -267,11 +263,9 @@ static Config vehicle_config ( int *target_points_size ) {
       if ( row == 6  && col == 1){ memset( terrain_types, 0, atoi(ptr)*sizeof(int) ); }
       // row for getting the terrain class colours
       if ( row == 7 && col == 1){
-
         int el = 0;
         int i = 0;
         TerrainRGB temp;
-
         char * token = strtok(ptr, "{},");
         while( token != NULL ) {
           // printf("%s\n", token);
@@ -295,10 +289,10 @@ static Config vehicle_config ( int *target_points_size ) {
   fclose(fp);
 
   // setup config struct which is returned by function
-  Config vehicle_config;
+  static Config vehicle_config;
   vehicle_config.wpts = test_targets;
   vehicle_config.trns = terrain_types;
-  return vehicle_config;
+  return &vehicle_config;
 }
 
 // Return average RGB values of input image as TerrainRGB structure format
@@ -325,7 +319,7 @@ int main(int argc, char *argv[]) {
 
   // setup webots vehicle params for terrain tests
   int target_points_size = MAXIMUM_NUMBER_OF_COORDINATES;
-  Config vehicle_params = vehicle_config( &target_points_size );
+  Config* vehicle_params = vehicle_config( &target_points_size );
 
   // initialize cameras
   cameraFront = wb_robot_get_device("cameraFront");
@@ -376,7 +370,7 @@ int main(int argc, char *argv[]) {
 
     check_keyboard();
     if (autopilot)
-      run_autopilot( &target_points_size, vehicle_params.wpts );
+      run_autopilot( &target_points_size, vehicle_params->wpts );
   }
   wb_robot_cleanup();
   return 0;
