@@ -64,11 +64,12 @@ ELEVATION_SCALING = 12       # multiply elevation points by "n" (larger "n" is h
 x_pts = [724, 958, 910, 780, 678, 674, 808, 950, 837, 785, 860, 626, 603, 591, 668, 713, 648, 768, 674, 701, 561, 613, 629, 39, 46, 230, 211, 119, 162, 150, 143, 329, 57, 85, 53, 159, 266, 53, 155, 222, 83, 970, 1086, 1220, 1253, 1217, 1081, 1023, 1210, 1253, 1265, 1250, 1201, 1178, 1257, 1253, 1222, 1225, 1223, 1120, 994, 864, 813, 914, 971, 1067, 1246, 1216, 1161, 1122, 1048, 982, 939, 886, 911, 516, 551, 730, 645, 151, 41, 78, 34, 11, 54, 26, 78, 96, 106, 118, 130, 146, 155, 188, 233, 279, 315, 355, 386, 420, 430, 463, 507, 540, 578, 585, 521, 481, 458, 430, 400, 343, 243, 382, 55, 85, 135, 256, 365, 448, 706, 674, 705, 786, 798, 753, 721, 752, 738, 922, 1001, 1108, 1093, 951, 852, 868, 963, 1128, 1001, 1151, 1071, 613, 468, 638, 728, 418, 328]
 y_pts = [14, 405, 555, 595, 520, 378, 308, 348, 510, 406, 397, 238, 126, 49, 27, 157, 162, 76, 106, 60, 24, 17, 45, 227, 65, 25, 87, 139, 215, 73, 27, 35, 144, 79, 22, 401, 390, 557, 672, 642, 644, 71, 35, 119, 218, 305, 379, 348, 377, 305, 186, 114, 39, 19, 27, 62, 14, 12, 50, 17, 22, 19, 32, 60, 37, 18, 255, 335, 417, 419, 392, 421, 456, 394, 349, 775, 714, 624, 667, 320, 795, 708, 662, 614, 660, 722, 1207, 1172, 1151, 1105, 1065, 1017, 999, 971, 959, 965, 979, 1004, 1038, 1087, 1119, 1165, 1225, 1244, 1261, 1280, 1245, 1232, 1215, 1165, 1127, 1080, 1063, 1194, 1192, 1094, 985, 932, 963, 1062, 1182, 1110, 1084, 1093, 1154, 1179, 1140, 1132, 1110, 915, 898, 914, 1015, 1013, 973, 929, 844, 864, 960, 970, 955, 928, 888, 848, 917, 785, 699]
 
-ADD_NOISE = True       # include additional noise?
+ADD_NOISE = False       # include additional noise?
 SAMPLES = 100           # Number of additional random samples used to generate heat map and terrain profile
 
 #### PATH PLANNING PARAMS
-START = (7,90)       # index value which agent starts at after including corner size
+# note that min index value is 0 and max is "XDIMENSION - corner size"...
+START = (97,21)       # index value which agent starts at after including corner size
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -331,21 +332,42 @@ def get_waypoints( route : np.ndarray ):
     wpts.append( (x_curr, y_curr) )
     return wpts
 
+def get_wpt_elev( wpt : np.array, terrain : Terrain ):
+    """Get waypoint elevation float value from corresponding tile object."""
+    # note that waypoints are in the form [X, Y] i.e. [Col, Row]! This is opposite to
+    # array lookup notation...
+    c, r = ( wpt / ((XSPACING+YSPACING)/2.0) ).astype(int)
+    return terrain.tiles[r, c].elevation
+
 def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
     """Save key Webots startup information in text file for C code."""
 
+    # trn.tiles[ ( wpts[0] / XSPACING ).astype(int) ]
+
+    # r, c = ( wpts[0] / XSPACING ).astype(int)
+    # trn.tiles[r, c]
+
+    # trn.tiles[r, c].elevation
+
+    # RC = lambda wpt : ( wpt / XSPACING ).astype(int)
+    # start_elev = get_wpt_elev( wpts[0], trn )
+
     # calculate translation values for vehicle (WeBots coordinate system)
-    tx = str(wpts[0][0] + XTRANSLATE + (3*XSPACING)/2)
-    ty = str(wpts[0][1] + YTRANSLATE + (3*YSPACING/2))
-    tz = str(elev[START[0] + CORNER_SIZE][ START[1] + CORNER_SIZE] + VEHICLE_HEIGHT/2)
+    extra = 0.6
+    webots_coords = lambda n, dn, dw : n + dn + (3*dw)/2
+    tx = str(webots_coords(wpts[0][0], XTRANSLATE, XSPACING))
+    ty = str(webots_coords(wpts[0][1], YTRANSLATE, YSPACING))
+    tz = str(elev[START[0] + CORNER_SIZE][ START[1] + CORNER_SIZE ] + VEHICLE_HEIGHT/2 + extra)
+    # tz = str(elev[START[0]][ START[1] ] + VEHICLE_HEIGHT/2)
+    # tz = str(get_wpt_elev( wpts[0], trn ) + + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
     index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
-    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(el[0] + XTRANSLATE + (3*XSPACING)/2),
-                                                    str(el[1] + YTRANSLATE + (3*YSPACING/2)),
+    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(webots_coords(el[0], XTRANSLATE, XSPACING)),
+                                                    str(webots_coords(el[1], YTRANSLATE, YSPACING)),
                                                     str(round(elev[ index(el[1]) ][ index(el[0]) ] + 
                                                                                   VEHICLE_HEIGHT/2 + 
-                                                                                  0.2, 4))) # add offset to align with vehicle centre [m]
+                                                                                  extra, 4))) # add offset to align with vehicle centre [m]
                                                     for el in wpts] )
 
     # Get Terrain Class : [Mid RGB, Velocity] from trn object
@@ -359,6 +381,15 @@ def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
                                                             i[1][-1])           # vehicle velocity
                             for i in trnWebots.items()] )
 
+    # Get starting direction of vehicle from waypoint0 to waypoint1 in radians
+    x0 = webots_coords( wpts[0][0], XTRANSLATE, XSPACING )
+    y0 = webots_coords( wpts[0][1], YTRANSLATE, YSPACING )
+    x1 = webots_coords( wpts[1][0], XTRANSLATE, XSPACING )
+    y1 = webots_coords( wpts[1][1], YTRANSLATE, YSPACING )
+    dTheta = math.atan( (abs(y0 - y1) / abs(x0 - x1)) if abs(x0 - x1) != 0 else math.inf )
+    dTheta = math.pi - dTheta if x0 > x1 else dTheta
+    dz = 1 if y0 < y1 else -1
+
     # structure of .wbo file
     formatted =  """Vehicle Config File
 Vehicle {{
@@ -369,7 +400,7 @@ Vehicle {{
     trn_count {}
     terrain {}
 }}"""   .format(   tx, ty, tz,
-                0, 0, -1, -0.85,
+                0, 0, dz, dTheta,
                 str(len(wpts)),
                 wpts_string,
                 str(len(trnWebots.keys())),

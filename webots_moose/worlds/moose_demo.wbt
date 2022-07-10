@@ -27,7 +27,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.30999501205909386 0.2948718291687563 0.9038549091868419 1.72133557442287
-  position 4.7485550288163765 -79.0472564210926 61.18801533594497
+  position 3.8575761943721747 -61.24432432015121 47.330939957304864
   near 1
   follow "moose"
 }
@@ -91,7 +91,7 @@ DEF MOOSE Moose {
   controller "moose_path_following_mod"
   bodySlot [
     Camera {
-      translation 0 0 -0.3
+      translation 0 0 -0.7
       rotation 0 1 0 1.57
       name "cameraDown"
       fieldOfView 0.7
