@@ -218,6 +218,7 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
     //                                                                         M_PI,
     //                                                                         TURN_COEFFICIENT,
     //                                                                         beta);
+    printf("|  REAL Rad/s %.2f\n", speeds[LEFT]);
     if (speeds[LEFT] > 26. || speeds[LEFT] < -26. ){ speeds[LEFT] = MAX_SPEED; } // max speed threshold
     else if (speeds[LEFT] < -26. ){ speeds[LEFT] = -MAX_SPEED; } // min speed threshold
     
@@ -352,25 +353,11 @@ static int get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain
       best = diff;
     }
   }
-
-  // WIP 
-  /**
-   * Need to do some sort of scaling with the following equation:
-   *    speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
-   * 
-   * When max speeds are set to a very low value then the -ve part 
-   * actually is greater than the positive part making the vehicle 
-   * go backwards. We might need some sort of PID control to ramp 
-   * the velocity up to new max appropriately? Perhaps we can scale
-   * negative part down instead? 
-   * ... needs work!
-   */
-
+  
   // km/h to m/s then m/s to rad/s using wheel diameter
   MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
 
-  // printf("-->Km/h: %f  |  Rad/s: %f\n",velocity, MAX_SPEED);
-  // printf("-->Type: %s\n\n\n",terrain);
+  printf("-->Terrain: %s  |  Km/h: %.2f  |  MAX Rad/s: %.2f  ", terrain, velocity, MAX_SPEED);
   // printf("AVG: red=%d, green=%d, blue=%d\n",values.r, 
   //                                     values.g,
   //                                     values.b);

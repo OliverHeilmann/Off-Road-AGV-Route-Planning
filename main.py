@@ -69,7 +69,7 @@ SAMPLES = 100           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (97,21)       # index value which agent starts at after including corner size
+START = (39,94)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -108,7 +108,7 @@ class Terrain( Tile, LandTypes ):
         xc=self.x_mesh+(XSPACING/2)
         yc=self.y_mesh+(YSPACING/2)
 
-        self.elevationCorners = np.full( (XDIMENSION, YDIMENSION), 0.0 )
+        self.elevationCorners = np.full( (YDIMENSION, XDIMENSION), 0.0 )
         for j in range(len(xc)):
             for k in range(len(xc[0])):
                 kde_value_list=[]
@@ -134,7 +134,9 @@ class Terrain( Tile, LandTypes ):
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct elevation data.
-        elevationNodes = cv2.resize( self.elevationCorners, (XDIMENSION-1, YDIMENSION-1) )  # INTERPOLATION!
+        elevationNodes = cv2.resize(self.elevationCorners,
+                                    (YDIMENSION-1, XDIMENSION-1), 
+                                    interpolation = cv2.INTER_LINEAR_EXACT )  # interpolation method!
         for iy, ix in np.ndindex( elevationNodes.shape ):
             self.tiles[ iy, ix ].elevation = elevationNodes[ iy, ix ]
         return (self.x_mesh, self.y_mesh), self.elevationCorners
@@ -206,7 +208,9 @@ boundingObject USE TERRAIN_MAP
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct slope data.
-        slopeNodes = cv2.resize( self.slopeCorners, (XDIMENSION-1, YDIMENSION-1) )  # INTERPOLATION!
+        slopeNodes = cv2.resize(self.slopeCorners,
+                                (YDIMENSION-1, XDIMENSION-1), 
+                                interpolation = cv2.INTER_LINEAR_EXACT )  # interpolation method!
         for iy, ix in np.ndindex( slopeNodes.shape ):
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
@@ -336,38 +340,23 @@ def get_wpt_elev( wpt : np.array, terrain : Terrain ):
     """Get waypoint elevation float value from corresponding tile object."""
     # note that waypoints are in the form [X, Y] i.e. [Col, Row]! This is opposite to
     # array lookup notation...
-    c, r = ( wpt / ((XSPACING+YSPACING)/2.0) ).astype(int)
+    c, r = ( wpt / ((XSPACING+YSPACING)/2.0) ).astype(int) + CORNER_SIZE
     return terrain.tiles[r, c].elevation
 
 def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
     """Save key Webots startup information in text file for C code."""
-
-    # trn.tiles[ ( wpts[0] / XSPACING ).astype(int) ]
-
-    # r, c = ( wpts[0] / XSPACING ).astype(int)
-    # trn.tiles[r, c]
-
-    # trn.tiles[r, c].elevation
-
-    # RC = lambda wpt : ( wpt / XSPACING ).astype(int)
-    # start_elev = get_wpt_elev( wpts[0], trn )
-
     # calculate translation values for vehicle (WeBots coordinate system)
-    extra = 0.6
     webots_coords = lambda n, dn, dw : n + dn + (3*dw)/2
     tx = str(webots_coords(wpts[0][0], XTRANSLATE, XSPACING))
     ty = str(webots_coords(wpts[0][1], YTRANSLATE, YSPACING))
-    tz = str(elev[START[0] + CORNER_SIZE][ START[1] + CORNER_SIZE ] + VEHICLE_HEIGHT/2 + extra)
-    # tz = str(elev[START[0]][ START[1] ] + VEHICLE_HEIGHT/2)
-    # tz = str(get_wpt_elev( wpts[0], trn ) + + VEHICLE_HEIGHT/2)
+    tz = str(get_wpt_elev( wpts[0], trn ) + VEHICLE_HEIGHT/2)
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
-    index = lambda el : int((el / XSPACING) - (CORNER_SIZE-1)) + CORNER_SIZE
     wpts_string = ",".join( ['{{{},{},{}}}'.format( str(webots_coords(el[0], XTRANSLATE, XSPACING)),
                                                     str(webots_coords(el[1], YTRANSLATE, YSPACING)),
-                                                    str(round(elev[ index(el[1]) ][ index(el[0]) ] + 
-                                                                                  VEHICLE_HEIGHT/2 + 
-                                                                                  extra, 4))) # add offset to align with vehicle centre [m]
+                                                    str(round(get_wpt_elev( el, trn ) + 
+                                                                     VEHICLE_HEIGHT/2 + 
+                                                                     0.2, 4))) # add offset to align with vehicle centre [m]
                                                     for el in wpts] )
 
     # Get Terrain Class : [Mid RGB, Velocity] from trn object
@@ -523,7 +512,7 @@ if __name__ == '__main__':
     fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners),
                     ax=ax1,)
 
-    ##### SLOPE HEATMAP OUTPUT #####
+    # ##### SLOPE HEATMAP OUTPUT #####
     ax2.set(title="Slope Heatmap")
     # plot Greedy
     ax2.plot(x_rt_greedy, y_rt_greedy,'g-')

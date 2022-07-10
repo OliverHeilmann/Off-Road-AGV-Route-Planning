@@ -125,9 +125,11 @@ def totalDistTime( route, maze, gridsize ):
         # over two river tiles. The averaging between neighbouring pixels causes this
         # issue. To avoid this, increase XDIMENSION and YDIMENSION or drop the 
         # PIXEL_RESOLUTION value also!
+        to_mps = lambda v_kmph : (v_kmph * 1000) / pow(60.0, 2) # convert km/hour to m/s
         if (maze[curr].velocity + maze[nxt].velocity) > 0.:
             total_Dist += dD( curr, nxt, gridsize )
-            total_Time += 2 * dD( curr, nxt, gridsize ) / (maze[curr].velocity + maze[nxt].velocity)
+            total_Time +=   (2 * dD( curr, nxt, gridsize )) /                       \
+                            (to_mps(maze[curr].velocity) + to_mps(maze[nxt].velocity))
         else:
             raise ValueError("""\n
     If velocity in tile = 0 then this means IOP tile resolution is so much lower
