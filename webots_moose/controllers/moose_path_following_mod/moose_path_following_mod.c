@@ -34,10 +34,10 @@
 #define TIME_STEP 16
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 #define DISTANCE_TOLERANCE 7.5  // (default = 1.5)
-#define MAX_SPEED 7.0   // in radians (default = 7.0): Note that 26 radians with 25" diameter wheels is ~30km/h which is vehicle top speed
+// #define MAX_SPEED 7.0   // in radians (default = 7.0): Note that 26 radians with 25" diameter wheels is ~30km/h which is vehicle top speed
 #define TURN_COEFFICIENT 7.0   // (default = 4.0)
 // for XYSPACING = 20, DISTANCE_TOLERANCE 15, MAX_SPEED 26.0, TURN_COEFFICIENT 4.0
-// double MAX_SPEED = 7.0;
+double MAX_SPEED = 7.0;
 
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
@@ -210,10 +210,20 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
   }
   // move the robot to the next target
   else {
-    speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
+    //////////////SPEED LEFT/////////////////
+    // speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
+    speeds[LEFT] = MAX_SPEED + TURN_COEFFICIENT * beta;
+    // printf("V: %.2f  |  Vmax: %.2f  |  Pi: %.2f  |  C: %.2f  |  B: %.2f\n", speeds[LEFT],
+    //                                                                         MAX_SPEED, 
+    //                                                                         M_PI,
+    //                                                                         TURN_COEFFICIENT,
+    //                                                                         beta);
     if (speeds[LEFT] > 26. || speeds[LEFT] < -26. ){ speeds[LEFT] = MAX_SPEED; } // max speed threshold
     else if (speeds[LEFT] < -26. ){ speeds[LEFT] = -MAX_SPEED; } // min speed threshold
-    speeds[RIGHT] = MAX_SPEED - M_PI - TURN_COEFFICIENT * beta;
+    
+    //////////////SPEED RIGHT/////////////////
+    // speeds[RIGHT] = MAX_SPEED - M_PI - TURN_COEFFICIENT * beta;
+    speeds[RIGHT] = MAX_SPEED - TURN_COEFFICIENT * beta;
     if (speeds[RIGHT] > 26. || speeds[RIGHT] < -26. ){ speeds[RIGHT] = MAX_SPEED; } // max speed threshold
     else if (speeds[RIGHT] < -26. ){ speeds[RIGHT] = -MAX_SPEED; } // max speed threshold
   }
@@ -357,7 +367,7 @@ static int get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain
    */
 
   // km/h to m/s then m/s to rad/s using wheel diameter
-  // MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
+  MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
 
   // printf("-->Km/h: %f  |  Rad/s: %f\n",velocity, MAX_SPEED);
   // printf("-->Type: %s\n\n\n",terrain);
