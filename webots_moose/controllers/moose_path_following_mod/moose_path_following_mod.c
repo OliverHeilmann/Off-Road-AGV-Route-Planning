@@ -25,6 +25,7 @@
 #include <webots/keyboard.h>
 #include <webots/motor.h>
 #include <webots/robot.h>
+#include <webots/display.h>
 
 ////////// Vehicle Params //////////
 #define MOOSE_WHEEL_DIAMETER 0.635  // wheel diameter in meters [m] 
@@ -36,8 +37,11 @@
 #define DISTANCE_TOLERANCE 7.5  // (default = 1.5)
 // #define MAX_SPEED 7.0   // in radians (default = 7.0): Note that 26 radians with 25" diameter wheels is ~30km/h which is vehicle top speed
 #define TURN_COEFFICIENT 7.0   // (default = 4.0)
-// for XYSPACING = 20, DISTANCE_TOLERANCE 15, MAX_SPEED 26.0, TURN_COEFFICIENT 4.0
-double MAX_SPEED = 7.0;
+
+// Placeholder globals to update key metrics – will use to print to console
+char TERRAIN [50] = "Open_Area";    // string of terrain type
+double MAX_SPEED = 7.0;             // rad/s
+double KMPH = 0;                    // Km/h
 
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
@@ -97,6 +101,18 @@ static void robot_set_speed(double left, double right) {
   }
 }
 
+// timer to check elapsed time since start of run
+static double elapsed_time( ){
+  static double start_time;
+  static int i;
+  if ( i == 0 ){ 
+    start_time= wb_robot_get_time() - 1.0;  // -1 to wait for vehicle to start moving!
+    i++;
+  }
+  else { return (wb_robot_get_time() - start_time); }
+  return 0.0;
+}
+
 // get keyboard inputs, swap between manual and autopilot modes
 static void check_keyboard() {
   double speeds[2] = {0.0, 0.0};
@@ -128,6 +144,11 @@ static void check_keyboard() {
         if (key != old_key) {  // perform this action just once
           const double *position_3d = wb_gps_get_values(gps);
           printf("position: {%f, %f}\n", position_3d[X], position_3d[Y]);
+        }
+        break;
+      case 'O':
+        if (key != old_key) {  // perform this action just once
+          printf("Elapsed Time: %.2f  |  Terrain: %s  |  Speed: %.2f Km/h\n", elapsed_time(), TERRAIN, KMPH);
         }
         break;
       case 'A':
@@ -213,12 +234,6 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
     //////////////SPEED LEFT/////////////////
     // speeds[LEFT] = MAX_SPEED - M_PI + TURN_COEFFICIENT * beta;
     speeds[LEFT] = MAX_SPEED + TURN_COEFFICIENT * beta;
-    // printf("V: %.2f  |  Vmax: %.2f  |  Pi: %.2f  |  C: %.2f  |  B: %.2f\n", speeds[LEFT],
-    //                                                                         MAX_SPEED, 
-    //                                                                         M_PI,
-    //                                                                         TURN_COEFFICIENT,
-    //                                                                         beta);
-    printf("|  REAL Rad/s %.2f\n", speeds[LEFT]);
     if (speeds[LEFT] > 26. || speeds[LEFT] < -26. ){ speeds[LEFT] = MAX_SPEED; } // max speed threshold
     else if (speeds[LEFT] < -26. ){ speeds[LEFT] = -MAX_SPEED; } // min speed threshold
     
@@ -227,6 +242,9 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
     speeds[RIGHT] = MAX_SPEED - TURN_COEFFICIENT * beta;
     if (speeds[RIGHT] > 26. || speeds[RIGHT] < -26. ){ speeds[RIGHT] = MAX_SPEED; } // max speed threshold
     else if (speeds[RIGHT] < -26. ){ speeds[RIGHT] = -MAX_SPEED; } // max speed threshold
+
+    // km/h to m/s then m/s to rad/s using wheel diameter
+    KMPH = ( speeds[LEFT]+speeds[RIGHT] * MOOSE_WHEEL_DIAMETER *  pow( 60.0 , 2.0 ) ) / 4000.0;
   }
   // set the motor speeds
   robot_set_speed(speeds[LEFT], speeds[RIGHT]);
@@ -333,35 +351,31 @@ static TerrainRGB get_avg_rgb( const unsigned char *image ){
   return trnrgb;
 }
 
-static int get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain_types ){
+static void get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain_types ){
   // get average image colour in RGB
   TerrainRGB values = get_avg_rgb( image );
 
   // loop through all classes to see which one is most similar to current avg colour
   int diff;
   int best = 255 * 3; // max difference it could be
-  char terrain[50];
   double velocity;
+  char temp[50] = "";
   for (int i = 0; i < terrain_classes; i++) {
     // calculate difference between current avg colour and terrain colour
     diff =  abs(values.r - terrain_types[i].r) +
             abs(values.g - terrain_types[i].g) +
             abs(values.b - terrain_types[i].b);
     if (diff < best) {
-      strcpy(terrain, terrain_types[i].trn);
+      strcpy(temp, terrain_types[i].trn);
       velocity = terrain_types[i].vel;
       best = diff;
     }
   }
-  
+  // assign new terrain class to global
+  strcpy(TERRAIN, temp);
+
   // km/h to m/s then m/s to rad/s using wheel diameter
   MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
-
-  printf("-->Terrain: %s  |  Km/h: %.2f  |  MAX Rad/s: %.2f  ", terrain, velocity, MAX_SPEED);
-  // printf("AVG: red=%d, green=%d, blue=%d\n",values.r, 
-  //                                     values.g,
-  //                                     values.b);
-  return 0;
 }
 
 
@@ -411,6 +425,9 @@ int main(int argc, char *argv[]) {
 
   // start forward motion
   robot_set_speed(MAX_SPEED, MAX_SPEED);
+
+  // start timer now
+  elapsed_time();
 
   // main loop
   while (wb_robot_step(TIME_STEP) != -1) {

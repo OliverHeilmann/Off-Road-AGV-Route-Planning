@@ -8,5 +8,6 @@ centralWidgetVisible: 1
 orthographicViewHeight: 1
 textFiles: 0 "controllers/moose_path_following_mod/moose_path_following_mod.c"
 consoles: Console:All:All
-renderingDevicePerspectives: moose:cameraDown;1;32;0;0.151526
-renderingDevicePerspectives: moose:cameraFront;1;0.0916667;0;0
+renderingDevicePerspectives: moose:MooseDisplay;1;1.1;0.666248;0
+renderingDevicePerspectives: moose:cameraDown;1;46;0;0.151526
+renderingDevicePerspectives: moose:cameraFront;1;0.0911458;0;0
