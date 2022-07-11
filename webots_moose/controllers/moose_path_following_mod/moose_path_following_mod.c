@@ -42,6 +42,7 @@
 char TERRAIN [50] = "Open_Area";    // string of terrain type
 double MAX_SPEED = 7.0;             // rad/s
 double KMPH = 0;                    // Km/h
+double DIST = 0;                    // m
 
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
@@ -83,6 +84,7 @@ static int current_target_index = 0;
 static bool autopilot = true;
 static bool old_autopilot = true;
 static int old_key = -1;
+bool first = true;
 
 static double modulus_double(double a, double m) {
   const int div = (int)(a / m);
@@ -148,7 +150,8 @@ static void check_keyboard() {
         break;
       case 'O':
         if (key != old_key) {  // perform this action just once
-          printf("Elapsed Time: %.2f  |  Terrain: %s  |  Speed: %.2f Km/h\n", elapsed_time(), TERRAIN, KMPH);
+          printf("Elapsed Time: %.2f s  |  Distance Travelled: %.2f m  |  Terrain: %s  |  Speed: %.2f Km/h\n", 
+                elapsed_time(), DIST, TERRAIN, KMPH);
         }
         break;
       case 'A':
@@ -351,6 +354,7 @@ static TerrainRGB get_avg_rgb( const unsigned char *image ){
   return trnrgb;
 }
 
+// Using the downward facing camera, check what terrain is below, set speed to corresponding value
 static void get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrain_types ){
   // get average image colour in RGB
   TerrainRGB values = get_avg_rgb( image );
@@ -376,6 +380,25 @@ static void get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrai
 
   // km/h to m/s then m/s to rad/s using wheel diameter
   MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
+}
+
+// Sum the total distance that the vehicle has travelled over the experiment duration
+static void distance_travelled( double *points ){
+  // get new points
+  const double *position_3d = wb_gps_get_values(gps);
+
+  if (first == false){
+    // add displacement to total sum
+    DIST += sqrt( pow( points[X] - position_3d[X], 2.0 ) + 
+                  pow( points[Y] - position_3d[Y], 2.0 ) + 
+                  pow( points[Z] - position_3d[Z], 2.0 ) );
+  }
+  else { first = false; }
+
+  // set old points to equal new points
+  points[X] = position_3d[X];
+  points[Y] = position_3d[Y];
+  points[Z] = position_3d[Z];
 }
 
 
@@ -426,10 +449,11 @@ int main(int argc, char *argv[]) {
   // start forward motion
   robot_set_speed(MAX_SPEED, MAX_SPEED);
 
-  // start timer now
-  elapsed_time();
+  // variables for calculating total distance travelled
+  double all_positions_3d[6]; // will store values as [oldX, oldY, oldZ, newX, newY, newZ]
 
   // main loop
+  elapsed_time();   // start timer now
   while (wb_robot_step(TIME_STEP) != -1) {
     // refresh the camera views
     wb_camera_get_image(cameraFront);   
@@ -438,6 +462,11 @@ int main(int argc, char *argv[]) {
     // from input image, get vehicle velocity (determined by colour in frame corresponding 
     // to a specific predefined terrain class)
     get_vehicle_velocity( image, vehicle_params->trns );
+
+    // sum distance travelled in step to total distance travelled
+    if (wb_robot_step(TIME_STEP * 10) != -1){ // wait longer time before summing
+      distance_travelled( all_positions_3d );
+    }
 
     check_keyboard();
     if (autopilot)

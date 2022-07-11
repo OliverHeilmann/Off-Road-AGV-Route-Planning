@@ -69,7 +69,7 @@ SAMPLES = 100           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (39,94)       # index value which agent starts at after including corner size (row, col)
+START = (21,120)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -505,7 +505,7 @@ if __name__ == '__main__':
     
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
-    ax1.plot(x_pts,y_pts,'ro')
+    # ax1.plot(x_pts,y_pts,'ro')
     ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                 ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
     # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')

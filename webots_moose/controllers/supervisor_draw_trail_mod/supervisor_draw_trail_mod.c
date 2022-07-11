@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
   double new_translation[3] = {-49, -49, 0.5725};
   double new_rotation[4] = {0, 0, -1, -0.85};
   double payload_rotation[4] = {0.85, 0.35, 0.35, 1.7};
-  vehicle_config( new_translation, new_rotation);
+  vehicle_config( new_translation, new_rotation );
 
   // Get moose vehicle node and then move to desired coords at startup
   WbNodeRef moose_node = wb_supervisor_node_get_from_def("MOOSE");
