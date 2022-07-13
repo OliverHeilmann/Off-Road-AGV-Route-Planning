@@ -51,7 +51,7 @@ XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
-USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 APPEARANCE = "TerrainSandy"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
@@ -69,7 +69,7 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (6,118)       # index value which agent starts at after including corner size (row, col)
+START = (100,34)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -468,8 +468,10 @@ if __name__ == '__main__':
 
     try:
         # create empty lists to overwrite if paths are found
-        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = dists_greedy = elevs_greedy = []
-        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = dists_astar = elevs_astar = []
+        x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
+        x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
+        y_wpts_greedy, x_wpts_greedy = START
+        y_wpts_astar, x_wpts_astar = START
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -544,8 +546,9 @@ if __name__ == '__main__':
     ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                 ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
     ax2.legend(['Greedy', 'A*'])
-    fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope),
+    cbar = fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope, vmax=MAX_SLOPE_ANGLE),
                     ax=ax2,)
+    cbar.cmap.set_over('black') # mark areas beyond max slope as black
     
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
