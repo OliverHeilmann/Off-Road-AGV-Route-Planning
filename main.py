@@ -44,32 +44,32 @@ RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower v
 #### WEBOTS ELEVATION MAP PARAMS
 XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 10     # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 10    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
-USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = True    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
-APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
+APPEARANCE = "TerrainSandy"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 200                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
-ELEVATION_SCALING = 12       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
+ELEVATION_SCALING = 15       # multiply elevation points by "n" (larger "n" is higher peaks, 0 < n < 1 is smaller peaks)
 
 x_pts = [724, 958, 910, 780, 678, 674, 808, 950, 837, 785, 860, 626, 603, 591, 668, 713, 648, 768, 674, 701, 561, 613, 629, 39, 46, 230, 211, 119, 162, 150, 143, 329, 57, 85, 53, 159, 266, 53, 155, 222, 83, 970, 1086, 1220, 1253, 1217, 1081, 1023, 1210, 1253, 1265, 1250, 1201, 1178, 1257, 1253, 1222, 1225, 1223, 1120, 994, 864, 813, 914, 971, 1067, 1246, 1216, 1161, 1122, 1048, 982, 939, 886, 911, 516, 551, 730, 645, 151, 41, 78, 34, 11, 54, 26, 78, 96, 106, 118, 130, 146, 155, 188, 233, 279, 315, 355, 386, 420, 430, 463, 507, 540, 578, 585, 521, 481, 458, 430, 400, 343, 243, 382, 55, 85, 135, 256, 365, 448, 706, 674, 705, 786, 798, 753, 721, 752, 738, 922, 1001, 1108, 1093, 951, 852, 868, 963, 1128, 1001, 1151, 1071, 613, 468, 638, 728, 418, 328]
 y_pts = [14, 405, 555, 595, 520, 378, 308, 348, 510, 406, 397, 238, 126, 49, 27, 157, 162, 76, 106, 60, 24, 17, 45, 227, 65, 25, 87, 139, 215, 73, 27, 35, 144, 79, 22, 401, 390, 557, 672, 642, 644, 71, 35, 119, 218, 305, 379, 348, 377, 305, 186, 114, 39, 19, 27, 62, 14, 12, 50, 17, 22, 19, 32, 60, 37, 18, 255, 335, 417, 419, 392, 421, 456, 394, 349, 775, 714, 624, 667, 320, 795, 708, 662, 614, 660, 722, 1207, 1172, 1151, 1105, 1065, 1017, 999, 971, 959, 965, 979, 1004, 1038, 1087, 1119, 1165, 1225, 1244, 1261, 1280, 1245, 1232, 1215, 1165, 1127, 1080, 1063, 1194, 1192, 1094, 985, 932, 963, 1062, 1182, 1110, 1084, 1093, 1154, 1179, 1140, 1132, 1110, 915, 898, 914, 1015, 1013, 973, 929, 844, 864, 960, 970, 955, 928, 888, 848, 917, 785, 699]
 
-ADD_NOISE = False       # include additional noise?
-SAMPLES = 100           # Number of additional random samples used to generate heat map and terrain profile
+ADD_NOISE = True       # include additional noise?
+SAMPLES = 110           # Number of additional random samples used to generate heat map and terrain profile
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (21,120)       # index value which agent starts at after including corner size (row, col)
+START = (6,118)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -292,7 +292,6 @@ boundingObject USE TERRAIN_MAP
         # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
         return np.array(iops).reshape(-1, XDIMENSION-1), np.array(velocities).reshape(-1, XDIMENSION-1)   # return 2D array of iops
 
-
 def isPowerOfTwo(n):
     """Function to check if x is power of 2."""
     if (n == 0): return False
@@ -340,41 +339,39 @@ def get_wpt_elev( wpt : np.array, terrain : Terrain ):
     """Get waypoint elevation float value from corresponding tile object."""
     # note that waypoints are in the form [X, Y] i.e. [Col, Row]! This is opposite to
     # array lookup notation...
-    c, r = ( wpt / ((XSPACING+YSPACING)/2.0) ).astype(int) + CORNER_SIZE
+    c, r = ( np.array(wpt) / ((XSPACING+YSPACING)/2.0) ).astype(int) + CORNER_SIZE
     return terrain.tiles[r, c].elevation
 
-def wbo_vehicle_config( elev : np.ndarray, wpts : np.ndarray, trn : Terrain ):
+def get_xyz_wb( wpt : np.array, trn : Terrain, dp = 4 ):
+    webots_coords = lambda n, dn, dw : n + dn + (3*dw)/2
+    x = webots_coords(wpt[0], XTRANSLATE, XSPACING)
+    y = webots_coords(wpt[1], YTRANSLATE, YSPACING)
+    z = round( get_wpt_elev( wpt, trn ) + VEHICLE_HEIGHT/2, dp )
+    return x, y, z
+
+def wbo_vehicle_config( wpts : np.ndarray, trn : Terrain ):
     """Save key Webots startup information in text file for C code."""
     # calculate translation values for vehicle (WeBots coordinate system)
-    webots_coords = lambda n, dn, dw : n + dn + (3*dw)/2
-    tx = str(webots_coords(wpts[0][0], XTRANSLATE, XSPACING))
-    ty = str(webots_coords(wpts[0][1], YTRANSLATE, YSPACING))
-    tz = str(get_wpt_elev( wpts[0], trn ) + VEHICLE_HEIGHT/2)
+    tx, ty, tz = get_xyz_wb( wpts[0], trn )
 
     # put all waypoints into string and adjust for elevation map offset in WeBots
-    wpts_string = ",".join( ['{{{},{},{}}}'.format( str(webots_coords(el[0], XTRANSLATE, XSPACING)),
-                                                    str(webots_coords(el[1], YTRANSLATE, YSPACING)),
-                                                    str(round(get_wpt_elev( el, trn ) + 
-                                                                     VEHICLE_HEIGHT/2 + 
-                                                                     0.2, 4))) # add offset to align with vehicle centre [m]
-                                                    for el in wpts] )
+    wpts_string = ",".join([ '{{{},{},{}}}'.format(x,y,z+0.3) for x,y,z in [get_xyz_wb(el, trn) for el in wpts] ])
 
     # Get Terrain Class : [Mid RGB, Velocity] from trn object
     trnWebots = trn.get_RGB_WeBots( maxvel = MAX_VELOCITY )
 
     # Colour of terrain classes – output in the form {terrain_type,r,g,b,vrf},{terrain_type,r,g,b,vrf}...
-    classes_str = ",".join( ["{{{},{},{},{},{}}}".format(   i[0],               # terrain class
-                                                            i[1][0][0],         # red
-                                                            i[1][0][1],         # green
-                                                            i[1][0][2],         # blue
-                                                            i[1][-1])           # vehicle velocity
+    # shift Firebrake colour by a number because blacks do not appear as dark with textures in Webots
+    classes_str = ",".join( ["{{{},{},{},{},{}}}".format(   i[0],                                       # terrain class
+                                                            i[1][0][0] if i[0] != 'Firebrake' else 50,  # red
+                                                            i[1][0][1] if i[0] != 'Firebrake' else 50,  # green
+                                                            i[1][0][2] if i[0] != 'Firebrake' else 50,  # blue
+                                                            i[1][-1])                                   # vehicle velocity
                             for i in trnWebots.items()] )
 
     # Get starting direction of vehicle from waypoint0 to waypoint1 in radians
-    x0 = webots_coords( wpts[0][0], XTRANSLATE, XSPACING )
-    y0 = webots_coords( wpts[0][1], YTRANSLATE, YSPACING )
-    x1 = webots_coords( wpts[1][0], XTRANSLATE, XSPACING )
-    y1 = webots_coords( wpts[1][1], YTRANSLATE, YSPACING )
+    x0, y0, z0 = get_xyz_wb( wpts[0], trn )
+    x1, y1, z1 = get_xyz_wb( wpts[1], trn )
     dTheta = math.atan( (abs(y0 - y1) / abs(x0 - x1)) if abs(x0 - x1) != 0 else math.inf )
     dTheta = math.pi - dTheta if x0 > x1 else dTheta
     dz = 1 if y0 < y1 else -1
@@ -402,6 +399,26 @@ Vehicle {{
             f.close()
     except:
         raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
+
+def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
+    """Get the elevation per distance travelled, return as xs and ys lists."""
+    # calculate translation values for vehicle (WeBots coordinate system)
+    x0, y0, z0 = get_xyz_wb( wpts[0], trn )
+    dist = 0.0
+    dists = [0.0]
+    elevs = [z0]
+    for wpt in wpts[1:]:
+        x1, y1, z1 = get_xyz_wb( wpt, trn ) # get new coords
+        dist += math.sqrt(  pow( x0 - x1, 2.0 ) + 
+                            pow( y0 - y1, 2.0 ) + 
+                            pow( z0 - z1, 2.0 ) )
+        dists.append( dist )
+        elevs.append( z1 )
+        x0 = x1
+        y0 = y1
+        z0 = z1
+    return dists, elevs
+
 
 # Main processing
 if __name__ == '__main__':
@@ -451,8 +468,8 @@ if __name__ == '__main__':
 
     try:
         # create empty lists to overwrite if paths are found
-        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = []
-        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = []
+        x_rt_greedy = y_rt_greedy = x_wpts_greedy = y_wpts_greedy = dists_greedy = elevs_greedy = []
+        x_rt_astar = y_rt_astar = x_wpts_astar = y_wpts_astar = dists_astar = elevs_astar = []
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -485,9 +502,12 @@ if __name__ == '__main__':
             waypoints_greedy = get_waypoints( route = solutionRoute_greedy )
             waypoints_astar = get_waypoints( route = solutionRoute_astar )
 
+            # get elevation data per distance travelled to plot later
+            dists_greedy, elevs_greedy = elevation_per_distance(  solutionRoute_greedy, trn = terrain)
+            dists_astar, elevs_astar = elevation_per_distance(  solutionRoute_astar, trn = terrain)
+
             # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
-            wbo_vehicle_config( elev = elevationCorners,
-                                wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
+            wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
                                 trn = terrain )
 
             ################# CREATE FIGURES #################
@@ -548,6 +568,14 @@ if __name__ == '__main__':
     # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
     vel2dArr = cv2.resize( vel2dArr, (XDIMENSION,YDIMENSION) )
     fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
+
+    ##### ELEVATION OVER DISTANCE OUTPUT #####
+    fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
+    ax5.set(title="Elevation Gain Over Distance Travelled")
+    ax5.plot(dists_greedy, elevs_greedy,'g-')
+    ax5.plot(dists_astar, elevs_astar,'r-')
+    ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
+    ax5.legend(['Greedy', 'A*'])
 
     plt.show()
     ###################################################
