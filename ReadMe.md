@@ -2,8 +2,7 @@
 Code designed to ...
 
 # Images
-![1 Greedy, A*, WeBots](imgs/greedyAstar3.png "1 Path Planning in Simulator")
-![2 Greedy, A*, WeBots](imgs/greedyAstar2.png "2 Path Planning in Simulator")
+![1 Full Test Run](imgs/fulltest1.png "1 Full Test Run")
 ![1 Greedy, A*, WeBots, Terrain](imgs/Beacon2.1.png "1 Path Planning over Terrain Classes in Simulator")
 ![2 Greedy, A*, WeBots, Terrain](imgs/Beacon2.2.png "2 Path Planning over Terrain Classes in Simulator")
 
