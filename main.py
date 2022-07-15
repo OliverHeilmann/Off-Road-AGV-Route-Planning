@@ -69,7 +69,7 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (100,34)       # index value which agent starts at after including corner size (row, col)
+START = (4,120)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
