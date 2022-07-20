@@ -64,12 +64,12 @@ ELEVATION_SCALING = 15       # multiply elevation points by "n" (larger "n" is h
 x_pts = [724, 958, 910, 780, 678, 674, 808, 950, 837, 785, 860, 626, 603, 591, 668, 713, 648, 768, 674, 701, 561, 613, 629, 39, 46, 230, 211, 119, 162, 150, 143, 329, 57, 85, 53, 159, 266, 53, 155, 222, 83, 970, 1086, 1220, 1253, 1217, 1081, 1023, 1210, 1253, 1265, 1250, 1201, 1178, 1257, 1253, 1222, 1225, 1223, 1120, 994, 864, 813, 914, 971, 1067, 1246, 1216, 1161, 1122, 1048, 982, 939, 886, 911, 516, 551, 730, 645, 151, 41, 78, 34, 11, 54, 26, 78, 96, 106, 118, 130, 146, 155, 188, 233, 279, 315, 355, 386, 420, 430, 463, 507, 540, 578, 585, 521, 481, 458, 430, 400, 343, 243, 382, 55, 85, 135, 256, 365, 448, 706, 674, 705, 786, 798, 753, 721, 752, 738, 922, 1001, 1108, 1093, 951, 852, 868, 963, 1128, 1001, 1151, 1071, 613, 468, 638, 728, 418, 328]
 y_pts = [14, 405, 555, 595, 520, 378, 308, 348, 510, 406, 397, 238, 126, 49, 27, 157, 162, 76, 106, 60, 24, 17, 45, 227, 65, 25, 87, 139, 215, 73, 27, 35, 144, 79, 22, 401, 390, 557, 672, 642, 644, 71, 35, 119, 218, 305, 379, 348, 377, 305, 186, 114, 39, 19, 27, 62, 14, 12, 50, 17, 22, 19, 32, 60, 37, 18, 255, 335, 417, 419, 392, 421, 456, 394, 349, 775, 714, 624, 667, 320, 795, 708, 662, 614, 660, 722, 1207, 1172, 1151, 1105, 1065, 1017, 999, 971, 959, 965, 979, 1004, 1038, 1087, 1119, 1165, 1225, 1244, 1261, 1280, 1245, 1232, 1215, 1165, 1127, 1080, 1063, 1194, 1192, 1094, 985, 932, 963, 1062, 1182, 1110, 1084, 1093, 1154, 1179, 1140, 1132, 1110, 915, 898, 914, 1015, 1013, 973, 929, 844, 864, 960, 970, 955, 928, 888, 848, 917, 785, 699]
 
-ADD_NOISE = True       # include additional noise?
+ADD_NOISE = False       # include additional noise?
 SAMPLES = 110           # Number of additional random samples used to generate heat map and terrain profile
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (4,120)       # index value which agent starts at after including corner size (row, col)
+START = (4,118)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 #######################################################################
@@ -546,10 +546,10 @@ if __name__ == '__main__':
     ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                 ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
     ax2.legend(['Greedy', 'A*'])
-    cbar = fig.colorbar(   ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope, vmax=MAX_SLOPE_ANGLE),
-                    ax=ax2,)
-    cbar.cmap.set_over('black') # mark areas beyond max slope as black
-    
+    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope, vmax=MAX_SLOPE_ANGLE),
+                            ax=ax2)
+    cbar.cmap.set_over('white')
+
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
     ax3.imshow( cv2.cvtColor(terrain.image, cv2.COLOR_BGR2RGB) )
