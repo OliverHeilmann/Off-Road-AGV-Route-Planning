@@ -31,7 +31,6 @@ from scipy import stats
 from maps.landtypes import Tile, LandTypes
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
-from collections import defaultdict
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
@@ -53,7 +52,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
-APPEARANCE = "TerrainSandy"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
+APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
