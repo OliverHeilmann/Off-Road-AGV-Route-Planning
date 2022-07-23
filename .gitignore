@@ -7,6 +7,7 @@ dep
 .*.cache
 build
 *.json
+*.tiff
 
 # don't push all textures
 textures/

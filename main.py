@@ -29,6 +29,7 @@ import cv2
 
 from scipy import stats
 from maps.landtypes import Tile, LandTypes
+from maps.dem import DEM
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
 
@@ -73,11 +74,14 @@ END = None      # index value which agent ends at after including corner size, s
 
 #######################################################################
 
-class Terrain( Tile, LandTypes ):
+class Terrain( Tile, LandTypes, DEM ):
     """Terrain class holds all functions relating to terrain generation."""
     def __init__( self, *args, **kwargs ):
         # initialise inherited land type class
         LandTypes.__init__( self )
+
+        # initialise inherited digital elevation map class with location of TIFF file
+        DEM.__init__( self, impath = 'maps/Australia_5mRES_1300mSQR.tiff' )
 
         # make a 2D array of tile objects, one for each node which contains
         # terrain "traits"/ attributes...
@@ -185,6 +189,56 @@ boundingObject USE TERRAIN_MAP
                 f.close()
         except:
             raise ValueError('"elevationmap_heatmap.wbo" did not save!')
+
+
+    def wbo_mapNEW( self ):
+        """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
+
+        # convert numpy array into string format usable by .wbo file format
+        demHeights = self.wb_heights()
+
+        height, width = self.imgNpy.shape
+
+        # structure of .wbo file
+        formatted =  """#VRML_OBJ R2022a utf8
+DEF TERRAIN Solid {{
+    translation {} {} {}
+    children [
+        Shape {{
+            appearance {} {{
+                textureTransform TextureTransform {{
+                scale {} {}
+            }}
+            }}
+            geometry DEF TERRAIN_MAP ElevationGrid {{
+                height [{}]
+                xDimension {}
+                xSpacing {}
+                yDimension {}
+                ySpacing {}
+            }}
+        }}
+    ]
+name "ELE_MOD"
+boundingObject USE TERRAIN_MAP
+}}"""   .format(XTRANSLATE,
+                YTRANSLATE,
+                ZTRANSLATE,
+                APPEARANCE,
+                SCALE, SCALE,
+                demHeights,
+                width,
+                1,
+                height,
+                1
+                )
+        try:
+            with open('maps/elevationmap_heatmap.wbo', 'w') as f:
+                f.write( formatted )
+                f.close()
+        except:
+            raise ValueError('"elevationmap_heatmap.wbo" did not save!')
+
 
     def slope_map( self, elevCnr : np.ndarray ):
         """Calculate the slope map using previously generated terrain elevation data."""
@@ -456,6 +510,8 @@ if __name__ == '__main__':
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
     terrain.wbo_map( elevationCorners )
+
+    terrain.wbo_mapNEW()
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
