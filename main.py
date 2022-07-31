@@ -81,7 +81,7 @@ class Terrain( Tile, LandTypes, DEM ):
         LandTypes.__init__( self )
 
         # initialise inherited digital elevation map class with location of TIFF file
-        DEM.__init__( self, impath = 'maps/Australia_5mRES_1300mSQR.tiff' )
+        DEM.__init__( self, impath = 'maps/DEM_1300x1300m.tiff' )
 
         # make a 2D array of tile objects, one for each node which contains
         # terrain "traits"/ attributes...
