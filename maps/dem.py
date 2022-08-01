@@ -1,4 +1,5 @@
 from PIL import Image
+from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 
@@ -23,11 +24,12 @@ class DEM:
         self.imgNpy = np.nan_to_num(im_short_np - np.nanmin(im_short_np),   # subtract min value from all to set range from 0 --> N
                                     nan = 0 )                               # equals zero after adjustment
 
-    def resize( self, width : int ):
+    def resizeDEM( self, width : int ):
         """Resize image into square to align with WeBots formatting, keep as class variable"""
         self.imgNpy = cv2.resize(   self.imgNpy,                               # image to resize
                                     (width, width),                             # make into square
                                     interpolation = cv2.INTER_LINEAR_EXACT )    # interpolation method!
+        return self.imgNpy
 
     def wb_heights( self ):
         """Return the heights of the DEM in WeBots readable string format."""
@@ -36,8 +38,20 @@ class DEM:
 
     def show( self, tiff = True, npy = True ):
         """Show original TIFF image and corrected versions by default."""
-        if tiff: self.imgTiff.show()
-        if npy: Image.fromarray( self.imgNpy ).show()
+        if tiff: 
+            # rescaling numpy array from 0 to 255 as TIFF format operates in greyscale within this range
+            rescale_np_arr = lambda arr : ((arr - arr.min()) * (1/(arr.max() - arr.min()) * 255)).astype('uint8')
+
+            # do the rescaling now
+            img_adj_0to255 = rescale_np_arr( self.imgNpy )
+
+            # turn back to tiff and show again to check borders have been dropped correctly
+            im_short_tiff = Image.fromarray(img_adj_0to255)
+            im_short_tiff.show()
+        if npy:
+            # plotting with matplotlib
+            plt.imshow(self.imgNpy[:, :], cmap=plt.cm.coolwarm)
+            plt.show()
 
     def __str__( self ):
         """Show sizes of each TIFF image """

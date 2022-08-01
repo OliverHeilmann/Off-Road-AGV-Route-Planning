@@ -191,11 +191,23 @@ boundingObject USE TERRAIN_MAP
             raise ValueError('"elevationmap_heatmap.wbo" did not save!')
 
 
-    def wbo_mapNEW( self ):
+    def foo( self ):
+        self.resizeDEM( width = XDIMENSION-1 )
+        demHeights = self.imgNpy
+        for iy, ix in np.ndindex( demHeights.shape ):
+            self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
+        
+        # return elevation corners (not tiles!)
+        return self.resizeDEM( width = XDIMENSION )
+
+    def wbo_mapDEM( self ):
         """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
 
         # convert numpy array into string format usable by .wbo file format
+        self.resizeDEM( width = XDIMENSION )
         demHeights = self.wb_heights()
+
+        # self.show()
 
         height, width = self.imgNpy.shape
 
@@ -221,16 +233,16 @@ DEF TERRAIN Solid {{
     ]
 name "ELE_MOD"
 boundingObject USE TERRAIN_MAP
-}}"""   .format(XTRANSLATE,
-                YTRANSLATE,
+}}"""   .format(-(width-1)*90 / 2.,  # Offset for terrain in x dir
+                -(height-1)*90 / 2.,
                 ZTRANSLATE,
                 APPEARANCE,
                 SCALE, SCALE,
                 demHeights,
                 width,
-                1,
+                90,
                 height,
-                1
+                90
                 )
         try:
             with open('maps/elevationmap_heatmap.wbo', 'w') as f:
@@ -504,6 +516,8 @@ if __name__ == '__main__':
     print("[INFO]: Creating Elevation Map...")
     (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
+    elevationCorners = terrain.foo()
+
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
 
@@ -511,7 +525,7 @@ if __name__ == '__main__':
     print("[INFO]: Creating WeBots Map...")
     terrain.wbo_map( elevationCorners )
 
-    terrain.wbo_mapNEW()
+    terrain.wbo_mapDEM()
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
