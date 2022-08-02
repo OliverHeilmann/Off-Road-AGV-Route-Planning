@@ -145,7 +145,7 @@ static void check_keyboard() {
       case 'P':
         if (key != old_key) {  // perform this action just once
           const double *position_3d = wb_gps_get_values(gps);
-          printf("position: {%f, %f}\n", position_3d[X], position_3d[Y]);
+          printf("position: {%f, %f, %f}\n", position_3d[X], position_3d[Y], position_3d[Z]);
         }
         break;
       case 'O':

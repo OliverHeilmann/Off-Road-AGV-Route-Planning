@@ -5,7 +5,12 @@ import cv2
 
 ############################## SETUP ###################################
 
-tiff_path = 'maps/Netherlands_0p5mRES_1300mSQR.tiff' # path to tiff file
+tiff_path = 'maps/bathDEM.tiff' # path to tiff file
+
+# im = cv2.imread('maps/Sentinel2_RGB20200506.tiff', -1)
+# cv2.imshow("img", im)
+# plt.imshow( cv2.cvtColor(im, cv2.COLOR_BGR2GRAY) )
+# plt.show()
 
 #######################################################################
 
@@ -30,11 +35,11 @@ class DEM:
         # reverse the order of elements along axis 0 (up/down) to align with global coordinate system
         self.imgNpy = np.flipud(self.imgNpy)
 
-    def resizeDEM( self, shape : tuple ):
+    def resizeDEM( self, shape : tuple, interp = cv2. INTER_CUBIC ):
         """Resize image into square to align with WeBots formatting, return new shape."""
-        return cv2.resize(  self.imgNpy,                                # image to resize
-                            shape,                                      # make into square
-                            interpolation = cv2.INTER_LINEAR_EXACT )    # interpolation method!
+        return cv2.resize(  self.imgNpy.astype('float32'),      # image to resize with values as floats
+                            shape,                              # make into square
+                            interpolation = interp )            # interpolation method!
 
     def wb_heights( self ):
         """Return the heights of the DEM in WeBots readable string format."""
