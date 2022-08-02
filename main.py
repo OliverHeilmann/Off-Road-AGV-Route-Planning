@@ -41,26 +41,30 @@ VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
-#### WEBOTS ELEVATION MAP PARAMS
+#### WEBOTS TERRAIN MAP PARAMS
 USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
                             # is selected.
+SAVEMAP = True              # If true then save the output elevation map else, only use it for path
+                            # planning and plotting graphs. If it is not saved, running the WeBots 
+                            # application will import the previous elevation map instead. This is 
+                            # useful where one wishes to test the accuracy of path planning at differing
+                            # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-
-XSPACING = YSPACING = 10    # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
+XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 90      # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
 YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
-USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
-
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
+
+INTERP = cv2. INTER_CUBIC           # Method for scaling up/down data (elevation, DEM and slope)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 200                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -74,8 +78,15 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (4,118)       # index value which agent starts at after including corner size (row, col)
+START = (0,0)       # index value which agent starts at after including corner size (row, col)
 END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+
+# START = (int(4140   / YDIMENSION),
+#          int(1080   / XDIMENSION) )      # index value which agent starts at after including corner size (row, col)
+# END   = (int(10530  / YDIMENSION),
+#          int(4700   / XDIMENSION) )      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+
+USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
 #######################################################################
 
@@ -86,7 +97,7 @@ class Terrain( Tile, LandTypes, DEM ):
         LandTypes.__init__( self )
 
         # initialise inherited digital elevation map class with location of TIFF file
-        DEM.__init__( self, impath = 'maps/DEM_1300x1300m.tiff' ,
+        DEM.__init__( self, impath = 'maps/bathDEM.tiff', #'maps/DEM_1300x1300m.tiff' ,
                             shape = (YDIMENSION, XDIMENSION)    )
 
         # make a 2D array of tile objects, one for each node which contains
@@ -139,21 +150,22 @@ class Terrain( Tile, LandTypes, DEM ):
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct elevation data.
-        elevationNodes = cv2.resize(self.elevationCorners,
+        elevationNodes = cv2.resize(self.elevationCorners.astype('float32'),
                                     (YDIMENSION-1, XDIMENSION-1), 
-                                    interpolation = cv2.INTER_LINEAR_EXACT )  # interpolation method!
+                                    interpolation = INTERP )  # interpolation method!
         for iy, ix in np.ndindex( elevationNodes.shape ):
             self.tiles[ iy, ix ].elevation = elevationNodes[ iy, ix ]
         return (self.x_mesh, self.y_mesh), self.elevationCorners
 
     def dem_to_tile( self ):
         """Get real DEM data and assign segments to corresponding tile class elevation attributes."""
-        # resize shape to shape-1 via interpolation to get corresponding values for tiles (not corners)
-        demHeights = self.resizeDEM( shape = (YDIMENSION-1, XDIMENSION-1) )
+        # resize shape to shape-1 via interpolation to get corresponding values for tiles (not corners!)
+        demHeights = self.resizeDEM( shape = (YDIMENSION-1, XDIMENSION-1),  # shape to resize to
+                                     interp = INTERP )                      # interpolation method
         for iy, ix in np.ndindex( demHeights.shape ):
             self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
 
-        # return elevation corners (not tiles!)
+        # return elevation corners of shape (YDIMENSION, XDIMENSION) i.e. not tiles!
         return self.imgNpy
 
     def wbo_map( self, elevationCorners : np.ndarray ):
@@ -195,12 +207,13 @@ boundingObject USE TERRAIN_MAP
                 YDIMENSION,
                 YSPACING
                 )
-        try:
-            with open('maps/elevationmap_heatmap.wbo', 'w') as f:
-                f.write( formatted )
-                f.close()
-        except:
-            raise ValueError('"elevationmap_heatmap.wbo" did not save!')
+        if SAVEMAP:
+            try:
+                with open('maps/elevationmap_heatmap.wbo', 'w') as f:
+                    f.write( formatted )
+                    f.close()
+            except:
+                raise ValueError('"elevationmap_heatmap.wbo" did not save!')
 
     def slope_map( self, elevCnr : np.ndarray ):
         """Calculate the slope map using previously generated terrain elevation data."""
@@ -223,9 +236,9 @@ boundingObject USE TERRAIN_MAP
         # necessary because the number of grid squares is == number of nodes-1. We must interpolate
         # between the nodes to get the correct elevation data for the CENTER of each grid square/ tile
         # such that the image grid square data corresponds to the correct slope data.
-        slopeNodes = cv2.resize(self.slopeCorners,
+        slopeNodes = cv2.resize(self.slopeCorners.astype('float32'),
                                 (YDIMENSION-1, XDIMENSION-1), 
-                                interpolation = cv2.INTER_LINEAR_EXACT )  # interpolation method!
+                                interpolation = INTERP )  # interpolation method!
         for iy, ix in np.ndindex( slopeNodes.shape ):
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
@@ -489,8 +502,8 @@ if __name__ == '__main__':
         # create empty lists to overwrite if paths are found
         x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
         x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
-        y_wpts_greedy, x_wpts_greedy = START
-        y_wpts_astar, x_wpts_astar = START
+        y_wpts_greedy, x_wpts_greedy = (START[0]*YSPACING, START[1]*XSPACING)
+        y_wpts_astar, x_wpts_astar = (START[0]*YSPACING, START[1]*XSPACING)
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -538,7 +551,7 @@ if __name__ == '__main__':
 
             x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
             x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
-    except: pass # continue silently after an error
+    except: pass # continue silently after an no route found edge case error...
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
