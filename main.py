@@ -81,7 +81,8 @@ class Terrain( Tile, LandTypes, DEM ):
         LandTypes.__init__( self )
 
         # initialise inherited digital elevation map class with location of TIFF file
-        DEM.__init__( self, impath = 'maps/DEM_1300x1300m.tiff' )
+        DEM.__init__( self, impath = 'maps/DEM_1300x1300m.tiff' ,
+                            shape = (YDIMENSION, XDIMENSION)    )
 
         # make a 2D array of tile objects, one for each node which contains
         # terrain "traits"/ attributes...
@@ -192,17 +193,15 @@ boundingObject USE TERRAIN_MAP
 
 
     def foo( self ):
-        self.resizeDEM( width = XDIMENSION-1 )
-        demHeights = self.imgNpy
+        demHeights = self.resizeDEM( width = XDIMENSION-1 )
         for iy, ix in np.ndindex( demHeights.shape ):
             self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
         
         # return elevation corners (not tiles!)
-        return self.resizeDEM( width = XDIMENSION )
+        return self.imgNpy
 
     def wbo_mapDEM( self ):
         """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
-
         # convert numpy array into string format usable by .wbo file format
         self.resizeDEM( width = XDIMENSION )
         demHeights = self.wb_heights()
@@ -240,9 +239,9 @@ boundingObject USE TERRAIN_MAP
                 SCALE, SCALE,
                 demHeights,
                 width,
-                90,
+                XSPACING,
                 height,
-                90
+                YSPACING
                 )
         try:
             with open('maps/elevationmap_heatmap.wbo', 'w') as f:
@@ -516,7 +515,7 @@ if __name__ == '__main__':
     print("[INFO]: Creating Elevation Map...")
     (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
-    elevationCorners = terrain.foo()
+    # elevationCorners = terrain.foo()        # <--------------------------------
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
@@ -525,7 +524,7 @@ if __name__ == '__main__':
     print("[INFO]: Creating WeBots Map...")
     terrain.wbo_map( elevationCorners )
 
-    terrain.wbo_mapDEM()
+    # terrain.wbo_mapDEM()         # <--------------------------------
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")

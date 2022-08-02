@@ -11,7 +11,7 @@ tiff_path = 'maps/Netherlands_0p5mRES_1300mSQR.tiff' # path to tiff file
 
 class DEM:
     """Manipulate input TIFF image into a Numpy friendly version which is compatible rest of the library."""
-    def __init__( self, impath : str, ):
+    def __init__( self, impath : str, shape : tuple ):
         self.imgTiff = Image.open( impath )
         
         # convert tiff to numpy array for handling later
@@ -23,13 +23,15 @@ class DEM:
         # Adjust image to be in range 0 to Max, replacing Nans with new min (which equals zero always)
         self.imgNpy = np.nan_to_num(im_short_np - np.nanmin(im_short_np),   # subtract min value from all to set range from 0 --> N
                                     nan = 0 )                               # equals zero after adjustment
+        
+        # resize to the global map size (so all map features are the corresponding scale)
+        self.imgNpy = self.resizeDEM( shape )
 
-    def resizeDEM( self, width : int ):
-        """Resize image into square to align with WeBots formatting, keep as class variable"""
-        self.imgNpy = cv2.resize(   self.imgNpy,                               # image to resize
-                                    (width, width),                             # make into square
-                                    interpolation = cv2.INTER_LINEAR_EXACT )    # interpolation method!
-        return self.imgNpy
+    def resizeDEM( self, shape : tuple ):
+        """Resize image into square to align with WeBots formatting, return new shape."""
+        return cv2.resize(  self.imgNpy,                                # image to resize
+                            shape,                                      # make into square
+                            interpolation = cv2.INTER_LINEAR_EXACT )    # interpolation method!
 
     def wb_heights( self ):
         """Return the heights of the DEM in WeBots readable string format."""
