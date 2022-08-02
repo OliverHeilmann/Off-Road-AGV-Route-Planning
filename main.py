@@ -42,18 +42,18 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
+USEDEM = False               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
                             # is selected.
-SAVEMAP = True              # If true then save the output elevation map else, only use it for path
+SAVEMAP = False              # If true then save the output elevation map else, only use it for path
                             # planning and plotting graphs. If it is not saved, running the WeBots 
                             # application will import the previous elevation map instead. This is 
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 90      # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 16   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 720      # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
@@ -492,7 +492,7 @@ if __name__ == '__main__':
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
-    slope = terrain.slope_map( elevationCorners )
+    slopeCorners = terrain.slope_map( elevationCorners )
 
     # Index of Passability generation
     print("[INFO]: Calculating Index of Passability...")
@@ -578,7 +578,7 @@ if __name__ == '__main__':
     ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
                 ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
     ax2.legend(['Greedy', 'A*'])
-    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slope, vmax=MAX_SLOPE_ANGLE),
+    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slopeCorners, vmax=MAX_SLOPE_ANGLE),
                             ax=ax2)
     cbar.cmap.set_over('white')
 
