@@ -11,7 +11,7 @@ tiff_path = 'maps/Netherlands_0p5mRES_1300mSQR.tiff' # path to tiff file
 
 class DEM:
     """Manipulate input TIFF image into a Numpy friendly version which is compatible rest of the library."""
-    def __init__( self, impath : str, shape : tuple ):
+    def __init__( self, impath : str, shape : tuple = None ):
         self.imgTiff = Image.open( impath )
         
         # convert tiff to numpy array for handling later
@@ -25,7 +25,10 @@ class DEM:
                                     nan = 0 )                               # equals zero after adjustment
         
         # resize to the global map size (so all map features are the corresponding scale)
-        self.imgNpy = self.resizeDEM( shape )
+        self.imgNpy = self.resizeDEM( shape ) if shape else self.imgNpy
+
+        # reverse the order of elements along axis 0 (up/down) to align with global coordinate system
+        self.imgNpy = np.flipud(self.imgNpy)
 
     def resizeDEM( self, shape : tuple ):
         """Resize image into square to align with WeBots formatting, return new shape."""
@@ -35,8 +38,7 @@ class DEM:
 
     def wb_heights( self ):
         """Return the heights of the DEM in WeBots readable string format."""
-        temp = np.flipud(self.imgNpy)
-        return ",".join( [",".join(item) for item in np.round(temp,2).astype(str)] ) # np to .wbo format
+        return ",".join( [",".join(item) for item in np.round(self.imgNpy,2).astype(str)] ) # np to .wbo format
 
     def show( self, tiff = True, npy = True ):
         """Show original TIFF image and corrected versions by default."""
@@ -47,12 +49,15 @@ class DEM:
             # do the rescaling now
             img_adj_0to255 = rescale_np_arr( self.imgNpy )
 
+            # make origin bottom left
+            img_adj_0to255 = np.flip(img_adj_0to255, 0)
+
             # turn back to tiff and show again to check borders have been dropped correctly
             im_short_tiff = Image.fromarray(img_adj_0to255)
             im_short_tiff.show()
         if npy:
             # plotting with matplotlib
-            plt.imshow(self.imgNpy[:, :], cmap=plt.cm.coolwarm)
+            plt.imshow(self.imgNpy[:, :], cmap=plt.cm.coolwarm, origin='lower')
             plt.show()
 
     def __str__( self ):

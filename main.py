@@ -42,9 +42,14 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS ELEVATION MAP PARAMS
+USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
+                            # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
+                            # ESTIMATOR PARAMS' below for more configuration options if this option
+                            # is selected.
+
 XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 90    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 10    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
@@ -85,14 +90,15 @@ class Terrain( Tile, LandTypes, DEM ):
                             shape = (YDIMENSION, XDIMENSION)    )
 
         # make a 2D array of tile objects, one for each node which contains
-        # terrain "traits"/ attributes...
+        # terrain "traits" or "attributes"...
         self.tiles = np.zeros( (YDIMENSION-1, XDIMENSION-1), dtype=object )
         for iy, ix in np.ndindex( self.tiles.shape ):
             self.tiles[ iy, ix ] = Tile()
 
         # prepare to store values, create variable names
-        self.x_mesh = list
-        self.y_mesh = list
+        x_grid = np.arange(0,XDIMENSION*XSPACING,XSPACING)
+        y_grid = np.arange(0,YDIMENSION*YSPACING,YSPACING)
+        self.x_mesh, self.y_mesh = np.meshgrid(x_grid,y_grid)
         self.elevationCorners = np.ndarray
         self.slopeCorners = np.ndarray
         self.image = np.ndarray
@@ -103,11 +109,6 @@ class Terrain( Tile, LandTypes, DEM ):
 
     def elevation_map( self, xs : list, ys : list ):
         """Take input points and return an intensity map as a 2D numpy array."""
-        # Construct grid
-        x_grid = np.arange(0,XDIMENSION*XSPACING,XSPACING)
-        y_grid = np.arange(0,YDIMENSION*YSPACING,YSPACING)
-        self.x_mesh, self.y_mesh = np.meshgrid(x_grid,y_grid)
-
         # Grid center points
         xc=self.x_mesh+(XSPACING/2)
         yc=self.y_mesh+(YSPACING/2)
@@ -145,11 +146,21 @@ class Terrain( Tile, LandTypes, DEM ):
             self.tiles[ iy, ix ].elevation = elevationNodes[ iy, ix ]
         return (self.x_mesh, self.y_mesh), self.elevationCorners
 
+    def dem_to_tile( self ):
+        """Get real DEM data and assign segments to corresponding tile class elevation attributes."""
+        # resize shape to shape-1 via interpolation to get corresponding values for tiles (not corners)
+        demHeights = self.resizeDEM( shape = (YDIMENSION-1, XDIMENSION-1) )
+        for iy, ix in np.ndindex( demHeights.shape ):
+            self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
+
+        # return elevation corners (not tiles!)
+        return self.imgNpy
+
     def wbo_map( self, elevationCorners : np.ndarray ):
         """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
 
-        # convert numpy array into string format usable by .wbo file format
-        heights = ",".join( [",".join(item) for item in np.round(elevationCorners,2).astype(str)] )
+        # If USEDEM is true, get DEM heights, else convert passed generated elevation data --> convert into .wbo format
+        heights =  self.wb_heights() if USEDEM else ",".join( [",".join(item) for item in np.round(elevationCorners,2).astype(str)] )
 
         # structure of .wbo file
         formatted =  """#VRML_OBJ R2022a utf8
@@ -190,66 +201,6 @@ boundingObject USE TERRAIN_MAP
                 f.close()
         except:
             raise ValueError('"elevationmap_heatmap.wbo" did not save!')
-
-
-    def foo( self ):
-        demHeights = self.resizeDEM( shape = (YDIMENSION-1, XDIMENSION-1) )
-        for iy, ix in np.ndindex( demHeights.shape ):
-            self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
-        
-        # return elevation corners (not tiles!)
-        return self.imgNpy
-
-    def wbo_mapDEM( self ):
-        """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
-        # convert numpy array into string format usable by .wbo file format
-        self.resizeDEM( width = XDIMENSION )
-        demHeights = self.wb_heights()
-
-        # self.show()
-
-        height, width = self.imgNpy.shape
-
-        # structure of .wbo file
-        formatted =  """#VRML_OBJ R2022a utf8
-DEF TERRAIN Solid {{
-    translation {} {} {}
-    children [
-        Shape {{
-            appearance {} {{
-                textureTransform TextureTransform {{
-                scale {} {}
-            }}
-            }}
-            geometry DEF TERRAIN_MAP ElevationGrid {{
-                height [{}]
-                xDimension {}
-                xSpacing {}
-                yDimension {}
-                ySpacing {}
-            }}
-        }}
-    ]
-name "ELE_MOD"
-boundingObject USE TERRAIN_MAP
-}}"""   .format(-(width-1)*90 / 2.,  # Offset for terrain in x dir
-                -(height-1)*90 / 2.,
-                ZTRANSLATE,
-                APPEARANCE,
-                SCALE, SCALE,
-                demHeights,
-                width,
-                XSPACING,
-                height,
-                YSPACING
-                )
-        try:
-            with open('maps/elevationmap_heatmap.wbo', 'w') as f:
-                f.write( formatted )
-                f.close()
-        except:
-            raise ValueError('"elevationmap_heatmap.wbo" did not save!')
-
 
     def slope_map( self, elevCnr : np.ndarray ):
         """Calculate the slope map using previously generated terrain elevation data."""
@@ -511,11 +462,13 @@ if __name__ == '__main__':
     # Initialise terrain class 
     terrain = Terrain( )
 
-    # Create intensity 2D numpy array using user defined params
-    print("[INFO]: Creating Elevation Map...")
-    (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
-
-    elevationCorners = terrain.foo( )        # <--------------------------------
+    # Either Create intensity 2D numpy array using user defined params or get DEM data
+    if USEDEM:
+        print("[INFO]: Getting Digital Elevation Map (DEM) data...")
+        elevationCorners = terrain.dem_to_tile()
+    else:
+        print("[INFO]: Creating Elevation Map...")
+        (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
@@ -523,8 +476,6 @@ if __name__ == '__main__':
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
     terrain.wbo_map( elevationCorners )
-
-    # terrain.wbo_mapDEM()         # <--------------------------------
 
     # Slope Map generation
     print("[INFO]: Calculating Slope Map...")
