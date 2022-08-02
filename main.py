@@ -44,7 +44,7 @@ RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower v
 #### WEBOTS ELEVATION MAP PARAMS
 XDIMENSION = YDIMENSION = 128    # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 
-XSPACING = YSPACING = 10    # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 90    # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1             # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
@@ -193,7 +193,7 @@ boundingObject USE TERRAIN_MAP
 
 
     def foo( self ):
-        demHeights = self.resizeDEM( width = XDIMENSION-1 )
+        demHeights = self.resizeDEM( shape = (YDIMENSION-1, XDIMENSION-1) )
         for iy, ix in np.ndindex( demHeights.shape ):
             self.tiles[ iy, ix ].elevation = demHeights[ iy, ix ]
         
@@ -515,7 +515,7 @@ if __name__ == '__main__':
     print("[INFO]: Creating Elevation Map...")
     (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
-    # elevationCorners = terrain.foo()        # <--------------------------------
+    elevationCorners = terrain.foo( )        # <--------------------------------
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
