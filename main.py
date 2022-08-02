@@ -35,7 +35,7 @@ from astarsearch import astarRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
+MAX_SLOPE_ANGLE = 0.95      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
@@ -46,25 +46,25 @@ USEDEM = False               # If set to true, real DEM data is used for path pl
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
                             # is selected.
-SAVEMAP = False              # If true then save the output elevation map else, only use it for path
+SAVEMAP = True              # If true then save the output elevation map else, only use it for path
                             # planning and plotting graphs. If it is not saved, running the WeBots 
                             # application will import the previous elevation map instead. This is 
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 16   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 720      # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
+XDIMENSION = YDIMENSION = 32   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 15      # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1               # Number of corners to ignore for path planning (to not fall off edge of map)
 
-XTRANSLATE = -(XDIMENSION-1)*XSPACING / 2.  # Offset for terrain in x dir
-YTRANSLATE = -(YDIMENSION-1)*YSPACING / 2.  # Offset for terrain in y dir
+XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
+YTRANSLATE = -YDIMENSION*YSPACING / 2.    # Offset for terrain in y dir
 ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
 PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
-INTERP = cv2. INTER_CUBIC           # Method for scaling up/down data (elevation, DEM and slope)
+INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
 #### KERNEL DENSITY ESTIMATOR PARAMS
 H = 200                      # Radius (h) defines how much affect each point has to KDE (higher H is more reach)
@@ -329,8 +329,8 @@ def isPowerOfTwo(n):
     return True
 
 def get_xys( route ):
-    xs = [coord[0]+XSPACING for coord in route]
-    ys = [coord[1]+YSPACING for coord in route]
+    xs = [coord[0] + 1.5*XSPACING for coord in route]
+    ys = [coord[1] + 1.5*YSPACING for coord in route]
     return xs, ys
 
 def get_waypoints( route : np.ndarray ):
@@ -502,8 +502,8 @@ if __name__ == '__main__':
         # create empty lists to overwrite if paths are found
         x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
         x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
-        y_wpts_greedy, x_wpts_greedy = (START[0]*YSPACING, START[1]*XSPACING)
-        y_wpts_astar, x_wpts_astar = (START[0]*YSPACING, START[1]*XSPACING)
+        y_wpts_greedy, x_wpts_greedy = (START[0]+1.5*YSPACING, START[1]+1.5*XSPACING)
+        y_wpts_astar , x_wpts_astar  = (START[0]+1.5*YSPACING, START[1]+1.5*XSPACING)
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -560,10 +560,11 @@ if __name__ == '__main__':
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
     # ax1.plot(x_pts,y_pts,'ro')
-    ax1.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
-                ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
+    ax1.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
+                ymin=0, ymax=(YDIMENSION-1)*YSPACING)
     # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
-    fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationCorners),
+    elevationTiles = cv2.resize( elevationCorners, (YDIMENSION-1,XDIMENSION-1) )
+    fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationTiles),
                     ax=ax1,)
 
     # ##### SLOPE HEATMAP OUTPUT #####
@@ -575,10 +576,11 @@ if __name__ == '__main__':
     ax2.plot(x_rt_astar, y_rt_astar,'r-')
     ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
     # plot axes and legend
-    ax2.axis(   xmin=-XSPACING/2, xmax=XDIMENSION*XSPACING-XSPACING/2,
-                ymin=-YSPACING/2, ymax=YDIMENSION*YSPACING-YSPACING/2)
+    ax2.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
+                ymin=0, ymax=(YDIMENSION-1)*YSPACING)
     ax2.legend(['Greedy', 'A*'])
-    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slopeCorners, vmax=MAX_SLOPE_ANGLE),
+    slopeTiles = cv2.resize( slopeCorners, (YDIMENSION-1,XDIMENSION-1) )
+    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slopeTiles, vmax=MAX_SLOPE_ANGLE),
                             ax=ax2)
     cbar.cmap.set_over('white')
 
@@ -601,7 +603,7 @@ if __name__ == '__main__':
     ax4.legend(['Greedy', 'A*'])
     
     # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
-    vel2dArr = cv2.resize( vel2dArr, (XDIMENSION,YDIMENSION) )
+    # vel2dArr = cv2.resize( vel2dArr, (YDIMENSION,XDIMENSION) )
     fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
