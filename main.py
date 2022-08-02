@@ -35,14 +35,14 @@ from astarsearch import astarRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-MAX_SLOPE_ANGLE = 0.95      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
+MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-USEDEM = False               # If set to true, real DEM data is used for path planning and Webots. 
+USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
                             # is selected.
@@ -52,8 +52,8 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 32   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 15      # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 90      # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1               # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -78,13 +78,13 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (0,0)       # index value which agent starts at after including corner size (row, col)
-END = None      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (4,110)       # index value which agent starts at after including corner size (row, col)
+END = (125,120)      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
-# START = (int(4140   / YDIMENSION),
-#          int(1080   / XDIMENSION) )      # index value which agent starts at after including corner size (row, col)
-# END   = (int(10530  / YDIMENSION),
-#          int(4700   / XDIMENSION) )      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+# START = (int(1200   / YDIMENSION),
+#          int(9800   / XDIMENSION) )      # index value which agent starts at after including corner size (row, col)
+# END   = (int(11385  / YDIMENSION),
+#          int(11385  / XDIMENSION) )      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 
@@ -555,7 +555,9 @@ if __name__ == '__main__':
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-    fig.suptitle(f'Terrain Heatmaps With Path Planning\n(Max Slope: {MAX_SLOPE_ANGLE} rad, Max Velocity: {MAX_VELOCITY} Km/h)', fontsize=16)
+    fig.suptitle('Terrain Heatmaps With Path Planning\n(Max Slope: {} deg, Max Velocity: {} Km/h)'.format(round(MAX_SLOPE_ANGLE/math.pi * 180,2),
+                                                                                                          MAX_VELOCITY), 
+                                                                                                          fontsize=16)
     
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
