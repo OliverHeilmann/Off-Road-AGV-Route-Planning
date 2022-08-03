@@ -28,6 +28,11 @@ WeBots Python doesn't currently support Arm86 architectures. Despite setting Pyt
 5) [Github Python Issues](https://github.com/RoboCupJuniorTC/rcj-soccersim/issues/36)
 6) [WeBots Appearance Files](https://github.com/cyberbotics/webots/tree/released/projects/appearances/protos)
 7) [Git Subdirectories](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+8) [Google Earth Engine DEM Catalogue](https://developers.google.com/earth-engine/datasets/catalog)
+9) [YOUTUBE: How to download Satellite Images from the USGS, ESA and Google Earth Engine](https://www.youtube.com/watch?v=uQvlTQoUWuQ)
+10) [YOUTUBE: Google Earth Engine Tutorial for Beginners: Map Elevation Data](https://www.youtube.com/watch?v=KQcSzClomtg)
+11) [YOUTUBE: Google Earth Engine Tutorial: DEM (Slope & Color Gradient)](https://www.youtube.com/watch?v=ulPoIlt77QI)
+
 
 # Notes
 1) Make sure that the correct paths to elevationmap_vehicle_config.txt are in moose_path_following_mod and supervisor_draw_trail_mod!
