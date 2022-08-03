@@ -97,7 +97,7 @@ class Terrain( Tile, LandTypes, DEM ):
         LandTypes.__init__( self )
 
         # initialise inherited digital elevation map class with location of TIFF file
-        DEM.__init__( self, impath = 'maps/bathDEM.tiff', #'maps/DEM_1300x1300m.tiff' ,
+        DEM.__init__( self, impath = 'maps/Wales_90mRES.tiff',
                             shape = (YDIMENSION, XDIMENSION)    )
 
         # make a 2D array of tile objects, one for each node which contains
@@ -502,8 +502,8 @@ if __name__ == '__main__':
         # create empty lists to overwrite if paths are found
         x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
         x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
-        y_wpts_greedy, x_wpts_greedy = (START[0]+1.5*YSPACING, START[1]+1.5*XSPACING)
-        y_wpts_astar , x_wpts_astar  = (START[0]+1.5*YSPACING, START[1]+1.5*XSPACING)
+        y_wpts_greedy, x_wpts_greedy = ((START[0]*YSPACING)+1.5*YSPACING, (START[1]*XSPACING)+1.5*XSPACING)
+        y_wpts_astar , x_wpts_astar  = ((START[0]*YSPACING)+1.5*YSPACING, (START[1]*XSPACING)+1.5*XSPACING)
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
