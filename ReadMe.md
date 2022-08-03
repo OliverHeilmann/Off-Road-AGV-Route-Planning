@@ -26,6 +26,7 @@ WeBots Python doesn't currently support Arm86 architectures. Despite setting Pyt
 4) [QGIS, Object Detection, Segmentation, Python Youtube Tutorial Series](https://www.youtube.com/watch?v=hgmhERX4YBw&list=PLzHdTn7Pdxs6R6gf-0aLCqy8pL1GazPEe)
 5) [Github Python Issues](https://github.com/RoboCupJuniorTC/rcj-soccersim/issues/36)
 6) [WeBots Appearance Files](https://github.com/cyberbotics/webots/tree/released/projects/appearances/protos)
+7) [Git Subdirectories](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
 
 # Notes
 1) Make sure that the correct paths to elevationmap_vehicle_config.txt are in moose_path_following_mod and supervisor_draw_trail_mod!
