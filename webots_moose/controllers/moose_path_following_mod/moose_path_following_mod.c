@@ -43,6 +43,7 @@ char TERRAIN [50] = "Open_Area";    // string of terrain type
 double MAX_SPEED = 7.0;             // rad/s
 double KMPH = 0;                    // Km/h
 double DIST = 0;                    // m
+int WAYPOINTS = 0;                  // number of waypoints in route
 
 enum XYZAComponents { X = 0, Y, Z, ALPHA };
 enum Sides { LEFT, RIGHT };
@@ -231,6 +232,12 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
     printf("%d%s target reached\n", current_target_index + 1, index_char);
     current_target_index++;
     current_target_index %= *target_points_size;
+
+    // post results of test if the final waypoint is reached
+    if (current_target_index == WAYPOINTS){
+      printf("TEST COMPLETE!\n---> Elapsed Time: %.2f s  |  Distance Travelled: %.2f m  |  Average Speed: %.2f Km/h\n", 
+            elapsed_time(), DIST, ( (DIST / elapsed_time()) * 60. * 60. ) / 1000. );
+    }
   }
   // move the robot to the next target
   else {
@@ -275,7 +282,10 @@ static Config* vehicle_config ( int *target_points_size ) {
     col = 0;
     while ( ptr != NULL ){
       // row for getting the length of waypoints
-      if ( row == 4  && col == 1){ memset( test_targets, 0, atoi(ptr)*sizeof(int) ); }
+      if ( row == 4  && col == 1){
+        WAYPOINTS = atoi(ptr);  // assign the number of waypoints to variable
+        memset( test_targets, 0, atoi(ptr)*sizeof(int) ); 
+      }
       // row for getting the waypoints
       if ( row == 5 && col == 1){
         double u, v;
