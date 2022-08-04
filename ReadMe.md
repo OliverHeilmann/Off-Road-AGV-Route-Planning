@@ -14,6 +14,9 @@ WeBots Python doesn't currently support Arm86 architectures. Despite setting Pyt
 2) Applications --> Python 3.9 --> Python Interpreter --> Copy Path
 3) WeBots --> Preferences --> Paste Path
 
+# Cloning the Repo
+Be sure to use the `git submodule update --init` command in the terminal after `git clone` in order to update the [Google Earth Engine](GEngine_Elev) submodule contents.
+
 # Importing Custom Models/ Shapes/ Terrains:
 1) Export a terrain model and make relevant changes to the dimensions
 2) In WeBots: `(+)` --> Import --> FILE.wbo
