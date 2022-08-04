@@ -32,7 +32,7 @@ WeBots Python doesn't currently support Arm86 architectures. Despite setting Pyt
 9) [YOUTUBE: How to download Satellite Images from the USGS, ESA and Google Earth Engine](https://www.youtube.com/watch?v=uQvlTQoUWuQ)
 10) [YOUTUBE: Google Earth Engine Tutorial for Beginners: Map Elevation Data](https://www.youtube.com/watch?v=KQcSzClomtg)
 11) [YOUTUBE: Google Earth Engine Tutorial: DEM (Slope & Color Gradient)](https://www.youtube.com/watch?v=ulPoIlt77QI)
-
+12) [QGIS Download](https://www.qgis.org/en/site/)
 
 # Notes
 1) Make sure that the correct paths to elevationmap_vehicle_config.txt are in moose_path_following_mod and supervisor_draw_trail_mod!
