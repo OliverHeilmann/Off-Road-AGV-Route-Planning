@@ -36,9 +36,9 @@ from astarsearch import astarRoute3D
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
 MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
-VEHICLE_LENGTH = 2.964      # Vehicle length in meters
-VEHICLE_HEIGHT = 1.145      # Vehicle height in meters
-MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
+VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
+VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
+MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
@@ -53,8 +53,8 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 2        # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 8        # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -329,7 +329,7 @@ boundingObject USE TERRAIN_MAP
         # determine kernel size based on vehicle params, if <= 1, skip this step due to
         # tile size being larger than vehicle max length.
         tiles_to_cover = math.ceil( VEHICLE_LENGTH / ((XSPACING+YSPACING)/2.0) )
-        if tiles_to_cover > 1.:
+        if tiles_to_cover > 1. and OBSTACLE_PADDING:
             # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
             kernel = np.ones((tiles_to_cover,tiles_to_cover), np.uint8)
             img_dilation = cv2.dilate(slopeNodes, kernel, iterations=1)
@@ -653,14 +653,14 @@ if __name__ == '__main__':
     ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
     ax4.legend(['Greedy', 'A*'])
     # apply padding as per vehicle size vs tile size requirements
-    # vel2dArr = apply_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
+    vel2dArr = apply_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
     cbar2 = fig.colorbar(   ax4.pcolormesh( terrain.x_mesh,
                                             terrain.y_mesh,
                                             vel2dArr,
                                             vmin=0.001,
                                             rasterized=True ), 
                             ax=ax4 )
-    # cbar2.cmap.set_under('white')
+    cbar2.cmap.set_under('white')
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
     fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
