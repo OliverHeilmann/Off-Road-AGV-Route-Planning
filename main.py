@@ -42,7 +42,7 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-DEMPATH = 'maps/Wales_90mRES.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
+DEMPATH = 'maps/Colorado_1mRES.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
 USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
@@ -54,8 +54,8 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # resolutions while maintaining the same terrain and elevation details.
 
 XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 90      # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1               # Number of corners to ignore for path planning (to not fall off edge of map)
+XSPACING = YSPACING = 10        # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
 YTRANSLATE = -YDIMENSION*YSPACING / 2.    # Offset for terrain in y dir
@@ -63,7 +63,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
+PIXEL_RESOLUTION = 2048            # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
 
 INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
@@ -244,6 +244,25 @@ boundingObject USE TERRAIN_MAP
         for iy, ix in np.ndindex( slopeNodes.shape ):
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
+
+    def pad_obstacles( self, showDilate=False ):
+        """Depending on vehicle size in relation to tile size, pad obstacles to avoid collisions."""
+        
+        slopeNodes = np.zeros( self.tiles.shape )
+        for iy, ix in np.ndindex( self.tiles.shape ):
+            # create mask of passable and impassable areas (0 = passable, 1 = impassable)
+            if self.tiles[ iy, ix ].slope > MAX_SLOPE_ANGLE: 
+                slopeNodes[ iy, ix ] = 1
+
+        # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
+        kernel = np.ones((3, 3), np.uint8)
+        img_dilation = cv2.dilate(slopeNodes, kernel, iterations=1)
+
+        if showDilate:
+            cv2.imshow('Source', slopeNodes)
+            cv2.imshow('Dilated', img_dilation)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
     def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, check = False ):
         """Divide terrain image into same number of grid squares as other terrain features."""
@@ -475,6 +494,7 @@ if __name__ == '__main__':
         #     if x < H and y < H: del x_pts[incr], y_pts[incr]
 
     # Initialise terrain class 
+    print("[INFO]: Initialising Script, Preparing Variables and Classes...")
     terrain = Terrain( )
 
     # Either Create intensity 2D numpy array using user defined params or get DEM data
@@ -496,8 +516,12 @@ if __name__ == '__main__':
     print("[INFO]: Calculating Slope Map...")
     slopeCorners = terrain.slope_map( elevationCorners )
 
+    # Pad obstacles if vehicle size is larger than the grid square (tile) size
+    print("[INFO]: Padding Obstacles According to Vehicle Dimensions ...")
+    terrain.pad_obstacles( showDilate=True )
+
     # Index of Passability generation
-    print("[INFO]: Calculating Index of Passability...")
+    print("[INFO]: Calculating Passability Map...")
     iop2dArr, vel2dArr = terrain.iop_map( )
 
     try:
