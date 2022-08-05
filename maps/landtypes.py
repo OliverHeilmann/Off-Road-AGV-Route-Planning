@@ -68,8 +68,9 @@ class Tile( LandTypes ):
         self.elevation = float
         self.slope = float
         self.image = np.ndarray
-        self.iop = 0    # will add to iteratively
+        self.iop = 0            # will add to iteratively
         self.velocity = float
+        self.obstacle = None    # after calculating if obstacle, update its internal value to save on next call (either T/F)
 
     def traitCoverage( self, land_class : str ):
         """Check coverage area of land class, return value between 0 and 1."""
@@ -80,11 +81,14 @@ class Tile( LandTypes ):
 
     def isobstacle( self, max_slope = 0.5, vehicle_type = "land", passable = True ):
         """Check if vehicle can pass this tile with given attributes."""
-        if vehicle_type == "land":  # cannot travel over water
-            passable = True if self.traitCoverage( "River" ) < 0.5 else False   # if River covers less than 50% of terrain...
-        elif vehicle_type == "water":   # cannot travel over land
-            passable = True if self.traitCoverage( "River" ) >= 0.5 else False  # if River covers more than 50% of terrain...
-        return False if max_slope >= self.slope and self.velocity > 0.0 and passable else True # False if NOT an obstacle!
+        if self.obstacle == None:
+            if vehicle_type == "land":  # cannot travel over water
+                passable = True if self.traitCoverage( "River" ) < 0.5 else False   # if River covers less than 50% of terrain...
+            elif vehicle_type == "water":   # cannot travel over land
+                passable = True if self.traitCoverage( "River" ) >= 0.5 else False  # if River covers more than 50% of terrain...
+            return False if max_slope >= self.slope and self.velocity > 0.0 and passable else True # False if NOT an obstacle!
+        # if here, return whether tile is an obstacle or not as bool
+        return self.obstacle
 
     def __str__( self ):
         """Returns all the trait variable names and their values."""

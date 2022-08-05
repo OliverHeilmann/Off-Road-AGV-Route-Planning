@@ -53,8 +53,8 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 10        # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 2        # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -80,15 +80,11 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (4,110)       # index value which agent starts at after including corner size (row, col)
-END = (125,120)      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (4,110)         # index value which agent starts at after including corner size (row, col)
+END = (125,120)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
-# START = (int(1200   / YDIMENSION),
-#          int(9800   / XDIMENSION) )      # index value which agent starts at after including corner size (row, col)
-# END   = (int(11385  / YDIMENSION),
-#          int(11385  / XDIMENSION) )      # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
-
-USE_WAYPOINTS = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS = False       # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
 
 #######################################################################
 
@@ -245,26 +241,7 @@ boundingObject USE TERRAIN_MAP
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
 
-    def pad_obstacles( self, showDilate=False ):
-        """Depending on vehicle size in relation to tile size, pad obstacles to avoid collisions."""
-        
-        slopeNodes = np.zeros( self.tiles.shape )
-        for iy, ix in np.ndindex( self.tiles.shape ):
-            # create mask of passable and impassable areas (0 = passable, 1 = impassable)
-            if self.tiles[ iy, ix ].slope > MAX_SLOPE_ANGLE: 
-                slopeNodes[ iy, ix ] = 1
-
-        # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
-        kernel = np.ones((3, 3), np.uint8)
-        img_dilation = cv2.dilate(slopeNodes, kernel, iterations=1)
-
-        if showDilate:
-            cv2.imshow('Source', slopeNodes)
-            cv2.imshow('Dilated', img_dilation)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-
-    def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, check = False ):
+    def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, show = False ):
         """Divide terrain image into same number of grid squares as other terrain features."""
         # Load an color image in BGR, reformat and get key params
         self.image = cv2.imread( imageDir, cv2.IMREAD_UNCHANGED )
@@ -295,7 +272,7 @@ boundingObject USE TERRAIN_MAP
                 self.tiles[ rn, cn ].image = self.image[r-M:r, c:c+N] # x4 channel image into tiles
 
         # check segmentation has worked...
-        if check:
+        if show:
             cv2.namedWindow('Main', cv2.WINDOW_NORMAL)
             cv2.namedWindow('Tile', cv2.WINDOW_NORMAL)
             cv2.imshow( 'Main', self.image )
@@ -341,7 +318,37 @@ boundingObject USE TERRAIN_MAP
         # scaled = 2.*(iops - np.min(iops))/np.ptp(iops)-1
         return np.array(iops).reshape(-1, XDIMENSION-1), np.array(velocities).reshape(-1, XDIMENSION-1)   # return 2D array of iops
 
-def isPowerOfTwo(n):
+    def pad_obstacles( self, showDilate : bool = False ):
+        """Depending on vehicle size in relation to tile size, pad obstacles to avoid collisions."""
+        slopeNodes = np.zeros( self.tiles.shape )
+        for iy, ix in np.ndindex( self.tiles.shape ):
+            # create mask of passable and impassable areas (0 = passable, 1 = impassable)
+            if self.tiles[ iy, ix ].isobstacle(max_slope = MAX_SLOPE_ANGLE):
+                slopeNodes[ iy, ix ] = 1
+
+        # determine kernel size based on vehicle params, if <= 1, skip this step due to
+        # tile size being larger than vehicle max length.
+        tiles_to_cover = math.ceil( VEHICLE_LENGTH / ((XSPACING+YSPACING)/2.0) )
+        if tiles_to_cover > 1.:
+            # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
+            kernel = np.ones((tiles_to_cover,tiles_to_cover), np.uint8)
+            img_dilation = cv2.dilate(slopeNodes, kernel, iterations=1)
+
+            for iy, ix in np.ndindex( img_dilation.shape ):
+                # if dilated image == 1 i.e. obstacle, set var to True, else False
+                self.tiles[ iy, ix ].obstacle = True if img_dilation[ iy, ix ] == 1 else False
+
+            if showDilate:
+                cv2.imshow('Source', slopeNodes)
+                cv2.imshow('Dilated', img_dilation)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+            return img_dilation # return dilated obstacle mask
+        else:
+            print('[INFO]: No Padding Needed...')
+            return slopeNodes   # obstacle mask
+
+def isPowerOfTwo( n ):
     """Function to check if x is power of 2."""
     if (n == 0): return False
     while (n != 1):
@@ -468,6 +475,14 @@ def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
         z0 = z1
     return dists, elevs
 
+def apply_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None):
+    """Set all obstacle values (including padding from mask) to larger than max slope."""
+    for iy, ix in np.ndindex( source.shape ):
+        # if obstacle, then make slope > max slope
+        if mask[ iy, ix ] == 1:
+            if min != None: source[ iy, ix ] = min - 1
+            elif max != None: source[ iy, ix ] = max + 1
+    return source
 
 # Main processing
 if __name__ == '__main__':
@@ -506,7 +521,7 @@ if __name__ == '__main__':
         (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
     print("[INFO]: Dividing Terrain Image into Grid Squares...")
-    _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION )
+    _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION, show = False )
 
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...")
@@ -516,13 +531,13 @@ if __name__ == '__main__':
     print("[INFO]: Calculating Slope Map...")
     slopeCorners = terrain.slope_map( elevationCorners )
 
-    # Pad obstacles if vehicle size is larger than the grid square (tile) size
-    print("[INFO]: Padding Obstacles According to Vehicle Dimensions ...")
-    terrain.pad_obstacles( showDilate=True )
-
     # Index of Passability generation
     print("[INFO]: Calculating Passability Map...")
     iop2dArr, vel2dArr = terrain.iop_map( )
+
+    # Pad obstacles if vehicle size is larger than the grid square (tile) size
+    print("[INFO]: Padding Obstacles According to Vehicle Dimensions...")
+    padded_obstacle_mask = terrain.pad_obstacles( showDilate = True )
 
     try:
         # create empty lists to overwrite if paths are found
@@ -570,7 +585,7 @@ if __name__ == '__main__':
             wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
                                 trn = terrain )
 
-            ################# CREATE FIGURES #################
+            ############################### CREATE FIGURES BELOW ###############################
             # reformat data to matplotlib readable version
             x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
             x_wpts_greedy, y_wpts_greedy = get_xys( waypoints_greedy )
@@ -581,9 +596,10 @@ if __name__ == '__main__':
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-    fig.suptitle('Terrain Heatmaps With Path Planning\n(Max Slope: {} deg, Max Velocity: {} Km/h)'.format(round(MAX_SLOPE_ANGLE/math.pi * 180,2),
-                                                                                                          MAX_VELOCITY), 
-                                                                                                          fontsize=16)
+    fig.suptitle('Terrain Heatmaps With Path Planning\n(Max Slope: {} deg, Max Velocity: {} Km/h)'.format(
+                                                                    round(MAX_SLOPE_ANGLE/math.pi * 180,2),
+                                                                    MAX_VELOCITY), 
+                                                                    fontsize=16)
     
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
@@ -592,7 +608,10 @@ if __name__ == '__main__':
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
     # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
     elevationTiles = cv2.resize( elevationCorners, (YDIMENSION-1,XDIMENSION-1) )
-    fig.colorbar(   ax1.pcolormesh(terrain.x_mesh,terrain.y_mesh, elevationTiles),
+    fig.colorbar(   ax1.pcolormesh( terrain.x_mesh,
+                                    terrain.y_mesh,
+                                    elevationTiles,
+                                    rasterized=True),
                     ax=ax1,)
 
     # ##### SLOPE HEATMAP OUTPUT #####
@@ -608,9 +627,13 @@ if __name__ == '__main__':
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
     ax2.legend(['Greedy', 'A*'])
     slopeTiles = cv2.resize( slopeCorners, (YDIMENSION-1,XDIMENSION-1) )
-    cbar = fig.colorbar(    ax2.pcolormesh(terrain.x_mesh,terrain.y_mesh, slopeTiles, vmax=MAX_SLOPE_ANGLE),
-                            ax=ax2)
-    cbar.cmap.set_over('white')
+    cbar1 = fig.colorbar(   ax2.pcolormesh( terrain.x_mesh,
+                                            terrain.y_mesh,
+                                            slopeTiles,
+                                            vmax= MAX_SLOPE_ANGLE,
+                                            rasterized=True),
+                            ax=ax2 )
+    cbar1.cmap.set_over('white')
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
@@ -629,10 +652,15 @@ if __name__ == '__main__':
     ax4.plot(x_rt_astar, y_rt_astar,'r-')
     ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
     ax4.legend(['Greedy', 'A*'])
-    
-    # add in buffer row and col to correct heatmap scaling (so nodes are in center of tiles)
-    # vel2dArr = cv2.resize( vel2dArr, (YDIMENSION,XDIMENSION) )
-    fig.colorbar( ax4.pcolormesh(terrain.x_mesh,terrain.y_mesh, vel2dArr), ax=ax4 )
+    # apply padding as per vehicle size vs tile size requirements
+    # vel2dArr = apply_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
+    cbar2 = fig.colorbar(   ax4.pcolormesh( terrain.x_mesh,
+                                            terrain.y_mesh,
+                                            vel2dArr,
+                                            vmin=0.001,
+                                            rasterized=True ), 
+                            ax=ax4 )
+    # cbar2.cmap.set_under('white')
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
     fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
