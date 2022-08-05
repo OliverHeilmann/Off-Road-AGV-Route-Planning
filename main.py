@@ -54,7 +54,7 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # resolutions while maintaining the same terrain and elevation details.
 
 XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 8        # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 8         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -80,8 +80,8 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (4,110)         # index value which agent starts at after including corner size (row, col)
-END = (125,120)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (40,320)         # index value which agent starts at after including corner size (row, col)
+END = (455,420)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 USE_WAYPOINTS = False       # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
@@ -543,8 +543,12 @@ if __name__ == '__main__':
         # create empty lists to overwrite if paths are found
         x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
         x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
-        y_wpts_greedy, x_wpts_greedy = ((START[0]*YSPACING)+1.5*YSPACING, (START[1]*XSPACING)+1.5*XSPACING)
-        y_wpts_astar , x_wpts_astar  = ((START[0]*YSPACING)+1.5*YSPACING, (START[1]*XSPACING)+1.5*XSPACING)
+
+        # add starting and ending positions now so that they are on map even if
+        # no route is found with path planners 
+        shift = lambda n : (n*YSPACING) + 1.5*YSPACING
+        y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+        y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
