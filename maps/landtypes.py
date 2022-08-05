@@ -81,9 +81,9 @@ class Tile( LandTypes ):
     def isobstacle( self, max_slope = 0.5, vehicle_type = "land", passable = True ):
         """Check if vehicle can pass this tile with given attributes."""
         if vehicle_type == "land":  # cannot travel over water
-            passable = True if self.traitCoverage( "River" ) < 0.5 else False
+            passable = True if self.traitCoverage( "River" ) < 0.5 else False   # if River covers less than 50% of terrain...
         elif vehicle_type == "water":   # cannot travel over land
-            passable = True if self.traitCoverage( "River" ) >= 0.5 else False
+            passable = True if self.traitCoverage( "River" ) >= 0.5 else False  # if River covers more than 50% of terrain...
         return False if max_slope >= self.slope and self.velocity > 0.0 and passable else True # False if NOT an obstacle!
 
     def __str__( self ):
