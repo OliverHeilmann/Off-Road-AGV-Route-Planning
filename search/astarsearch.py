@@ -100,7 +100,7 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
         number_explored += 1
         explored.add(current_state)
         
-        # the four neighbour locations (remember, can only traverse on 2D plane i.e. AGV cannot move 
+        # the eight neighbour locations (remember, can only traverse on 2D plane i.e. AGV cannot move 
         # up or down so we exclude these even though our cost heuristic considers height)
         right = (current_state[0], current_state[1] + 1)
         left = (current_state[0], current_state[1] - 1)
@@ -191,7 +191,7 @@ def astarRoute3D( terrain, maxvelocity=50, maxslope=100, start=(0,0), goal=None,
         print(f"    Total states explored: {number_explored}")
         print(f"    Total time till solution: {endtime} [s]")
 
-        # consider point to point distances not accounding for variations in elevation (height) resulting
+        # consider point to point distances not accounting for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
         d, t = totalDistTime(solution[::-1], terrain, gridsize)
         print("    Estimated distance travelled: {} [m]\n    Estimated time taken: {} [s]".format(d,t))
