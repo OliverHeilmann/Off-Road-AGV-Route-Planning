@@ -42,7 +42,7 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-DEMPATH = 'maps/Colorado_1mRES.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
+DEMPATH = 'maps/Colorado1_1mRES_2139x2198PIX.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
 USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
@@ -53,8 +53,8 @@ SAVEMAP = True              # If true then save the output elevation map else, o
                             # useful where one wishes to test the accuracy of path planning at differing
                             # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 128   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 8         # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -80,7 +80,7 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (40,320)         # index value which agent starts at after including corner size (row, col)
+START = (50,320)         # index value which agent starts at after including corner size (row, col)
 END = (455,420)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
 USE_WAYPOINTS = False       # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
