@@ -12,7 +12,7 @@ import sys
 sys.path.append('./maps')     # add 'search' directory to path
 
 
-PATH_TO_IMAGE = "webots_moose/protos/textures/TerrainFeaturesScaled.png"
+PATH_TO_IMAGE = "webots_moose/protos/textures/TerrainFeatures.png"
 
 image_hsv = None   # global ;(
 pixel = (20,60,80) # some default
@@ -28,7 +28,9 @@ def pick_color(event,x,y,flags,param):
         pct = 15
         upper =  np.array([pixel[0] + pct, pixel[1] + pct, pixel[2] + 40])
         lower =  np.array([pixel[0] - pct, pixel[1] - pct, pixel[2] - 40])
-        print(f"MidRGB: {list(rgbpixel)}, MidHSV: {list(pixel)}, LowerHSV: {list(lower)}, UpperHSV: {list(upper)}")
+        
+        # -------------MidRGB-----------MidHSV-------LowerHSV-------UpperHSV-----
+        print(f"{list(rgbpixel)}, {list(pixel)}, {list(lower)}, {list(upper)}")
 
         image_mask = cv2.inRange(image_hsv,lower,upper)
         cv2.imshow("mask",image_mask)
