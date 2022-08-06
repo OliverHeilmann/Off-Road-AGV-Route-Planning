@@ -8,6 +8,7 @@ dep
 build
 *.json
 *.tiff
+resize.py
 
 # don't push all textures
 textures/
