@@ -39,6 +39,7 @@ def main( imgPath = "" ):
     global image_hsv, pixel # so we can use it in mouse callback
 
     image_src = cv2.imread( imgPath )  # pick.py my.png
+    image_src = cv2.resize(image_src, (1024, 1024), interpolation = cv2.INTER_AREA )
     if image_src is None:
         print ("the image read is None............")
         return
