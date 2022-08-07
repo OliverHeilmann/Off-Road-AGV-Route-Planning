@@ -42,7 +42,7 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-DEMPATH = 'maps/Colorado1_1mRES_2139x2198PIX.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
+DEMPATH = 'maps/Colorado2_1mRES_2151x2046PIX.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
 USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
                             # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                             # ESTIMATOR PARAMS' below for more configuration options if this option
@@ -63,7 +63,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 2048            # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!)
+PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
 
 INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
