@@ -389,7 +389,7 @@ static void get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrai
   strcpy(TERRAIN, temp);
 
   // km/h to m/s then m/s to rad/s using wheel diameter
-  MAX_SPEED = (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 ));
+  MAX_SPEED = fabs( (2.0 * velocity * 1000.0) / (MOOSE_WHEEL_DIAMETER * pow( 60.0 , 2.0 )) );
 }
 
 // Sum the total distance that the vehicle has travelled over the experiment duration
