@@ -194,5 +194,7 @@ def astarRoute3D( terrain, maxvelocity=50, maxslope=100, start=(0,0), goal=None,
         # consider point to point distances not accounting for variations in elevation (height) resulting
         # in under estimating the actual distance travelled
         d, t = totalDistTime(solution[::-1], terrain, gridsize)
-        print("    Estimated distance travelled: {} [m]\n    Estimated time taken: {} [s]".format(d,t))
+        print(f"    Estimated distance travelled: {d} [m]")
+        print(f"    Estimated time taken: {t} [s]")
+        print(f"    Estimated average speed: {round(3.6*d/t,2)} [m/s]")
     return solution[::-1]   # [::-1] reverse to start in correct order
