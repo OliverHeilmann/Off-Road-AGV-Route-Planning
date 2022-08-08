@@ -12,7 +12,7 @@ import sys
 sys.path.append('./maps')     # add 'search' directory to path
 
 
-PATH_TO_IMAGE = "webots_moose/protos/textures/TerrainFeatures.png"
+PATH_TO_IMAGE = "webots_moose/protos/textures/TerrainFeaturesScaled.png"
 
 image_hsv = None   # global ;(
 pixel = (20,60,80) # some default
