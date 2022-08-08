@@ -6,7 +6,7 @@ XDIMENSION = YDIMENSION = 128       # Max number of nodes in x.y dirs (MUST BE A
 XSPACING = YSPACING = 10     # The spacing between nodes in x, y dir [meters]
 
 # path to terrain image
-img = cv2.imread("/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/webots_moose/protos/textures/TerrainFeaturesScaled.png")
+img = cv2.imread("webots_moose/protos/textures/TerrainFeaturesScaled.png")
 
 # variables
 ix = -1
