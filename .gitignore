@@ -10,6 +10,11 @@ build
 *.tiff
 resize.py
 
+# ignore terrain folders
+Colorado*
+Louisiana*
+WestVirginia*
+
 # don't push all textures
 textures/
 !textures/TerrainFeatures.png
