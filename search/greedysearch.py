@@ -180,5 +180,5 @@ def greedyRoute3D( terrain, maxvelocity=50, maxslope=100, start=(0,0), goal=None
         d, t = totalDistTime(solution[::-1], terrain, gridsize)
         print(f"    Estimated distance travelled: {d} [m]")
         print(f"    Estimated time taken: {t} [s]")
-        print(f"    Estimated average speed: {round(3.6*d/t,2)} [m/s]")
+        print(f"    Estimated average speed: {round(3.6*d/t,2)} [km/h]")
     return solution[::-1]   # [::-1] reverse to start in correct order
