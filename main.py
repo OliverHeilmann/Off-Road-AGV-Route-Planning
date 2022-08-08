@@ -85,11 +85,12 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (50,320)         # index value which agent starts at after including corner size (row, col)
-END = (455,420)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (50,320)            # index value which agent starts at after including corner size (row, col)
+END = (455,420)             # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
 
-USE_WAYPOINTS = False       # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
+SHOW_OUTOFBOUNDS = True     # If true, then mark areas which are 'No Go' on Slope and passability maps i.e. block out in white
 
 #######################################################################
 
@@ -508,7 +509,7 @@ def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
         z0 = z1
     return dists, elevs
 
-def apply_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None):
+def apply_padding_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None):
     """Set all obstacle values (including padding from mask) to larger than max slope."""
     for iy, ix in np.ndindex( source.shape ):
         # if obstacle, then make slope > max slope
@@ -677,7 +678,7 @@ if __name__ == '__main__':
                                             vmax= MAX_SLOPE_ANGLE,
                                             rasterized=True),
                             ax=ax2 )
-    cbar1.cmap.set_over('white')
+    if SHOW_OUTOFBOUNDS: cbar1.cmap.set_over('white')
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
@@ -697,14 +698,14 @@ if __name__ == '__main__':
     ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
     ax4.legend(['Greedy', 'A*'])
     # apply padding as per vehicle size vs tile size requirements
-    vel2dArr = apply_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
+    vel2dArr = apply_padding_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
     cbar2 = fig.colorbar(   ax4.pcolormesh( terrain.x_mesh,
                                             terrain.y_mesh,
                                             vel2dArr,
                                             vmin=0.001,
                                             rasterized=True ), 
                             ax=ax4 )
-    cbar2.cmap.set_under('white')
+    if SHOW_OUTOFBOUNDS: cbar2.cmap.set_under('white')
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
     fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
