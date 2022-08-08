@@ -24,6 +24,7 @@ sys.path.append('./search')
 from os import walk
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 import math
 import random
 import cv2
@@ -43,7 +44,7 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado2'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -514,6 +515,9 @@ def apply_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None)
 
 # Main processing
 if __name__ == '__main__':
+    # time script execution
+    starttime = time.time()
+
     # check params ar acceptable...
     if not isPowerOfTwo(XDIMENSION) or not isPowerOfTwo(YDIMENSION):
         raise ValueError("""\n\n[ERROR]: XDIMENSION and YDIMENSION must be a power of two!
@@ -625,6 +629,10 @@ if __name__ == '__main__':
             x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
             x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
     except: pass # continue silently after an no route found edge case error...
+
+    # Consider end time before plotting
+    endtime = round((time.time() - starttime), 2)
+    print(f"[INFO]: Algorithm Finished After: {endtime} [s]!")
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
