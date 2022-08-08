@@ -306,8 +306,12 @@ boundingObject USE TERRAIN_MAP
             for feature in self.get_type_keys():
                 vrf = tile.get_type_info( feature )[-1]  # vegetation roughness factor (VRF)
 
-                # if slope type then append None placeholder, we handle this differently
-                if feature == "Slope": tile.iop += tile.slope * vrf             # updating iop total
+                # If slope type then append None placeholder, we handle this differently. Here,
+                # we use a block sliding down a ramp model, where the steeper the angle, the
+                # greater the opposing force required to continue moving up the ramp. As slope
+                # is in range ±90 deg (but we assume 0 to 90), this means slope IOP is in range
+                # 0 to 1, with a sinusoidal curve profile
+                if feature == "Slope": tile.iop += math.sin(tile.slope) * vrf   # updating iop total 
                 else:
                     image_hsv = cv2.cvtColor( tile.image, cv2.COLOR_BGR2HSV )   # get hsv of tile image
                     lower, upper = self.get_colour_range( feature )             # get colour range
