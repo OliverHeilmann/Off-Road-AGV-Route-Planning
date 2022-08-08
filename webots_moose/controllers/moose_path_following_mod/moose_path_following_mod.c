@@ -86,6 +86,7 @@ static bool autopilot = true;
 static bool old_autopilot = true;
 static int old_key = -1;
 bool first = true;
+float displacement = 0.0;
 
 static double modulus_double(double a, double m) {
   const int div = (int)(a / m);
@@ -252,9 +253,6 @@ static void run_autopilot( int *target_points_size, Vector *new_targets ) {
     speeds[RIGHT] = MAX_SPEED - TURN_COEFFICIENT * beta;
     if (speeds[RIGHT] > 26. || speeds[RIGHT] < -26. ){ speeds[RIGHT] = MAX_SPEED; } // max speed threshold
     else if (speeds[RIGHT] < -26. ){ speeds[RIGHT] = -MAX_SPEED; } // max speed threshold
-
-    // km/h to m/s then m/s to rad/s using wheel diameter
-    KMPH = ( speeds[LEFT]+speeds[RIGHT] * MOOSE_WHEEL_DIAMETER *  pow( 60.0 , 2.0 ) ) / 4000.0;
   }
   // set the motor speeds
   robot_set_speed(speeds[LEFT], speeds[RIGHT]);
@@ -396,12 +394,19 @@ static void get_vehicle_velocity( const unsigned char *image, TerrainRGB *terrai
 static void distance_travelled( double *points ){
   // get new points
   const double *position_3d = wb_gps_get_values(gps);
+  float timestamp = elapsed_time();
 
   if (first == false){
     // add displacement to total sum
-    DIST += sqrt( pow( points[X] - position_3d[X], 2.0 ) + 
-                  pow( points[Y] - position_3d[Y], 2.0 ) + 
-                  pow( points[Z] - position_3d[Z], 2.0 ) );
+    displacement = sqrt(pow( points[X] - position_3d[X], 2.0 ) + 
+                        pow( points[Y] - position_3d[Y], 2.0 ) + 
+                        pow( points[Z] - position_3d[Z], 2.0 ) );
+
+    // v = dD / dT i.e. calculate elapsed time from prev time step, then put into km/h from m/s
+    KMPH = (displacement * 3.6) / (timestamp - points[Z+1]);
+    
+    // update total distance travelled
+    DIST += displacement;
   }
   else { first = false; }
 
@@ -409,6 +414,7 @@ static void distance_travelled( double *points ){
   points[X] = position_3d[X];
   points[Y] = position_3d[Y];
   points[Z] = position_3d[Z];
+  points[Z+1] = timestamp; // include timestamp
 }
 
 
@@ -460,7 +466,7 @@ int main(int argc, char *argv[]) {
   robot_set_speed(MAX_SPEED, MAX_SPEED);
 
   // variables for calculating total distance travelled
-  double all_positions_3d[6]; // will store values as [oldX, oldY, oldZ, newX, newY, newZ]
+  double all_positions_3d[4]; // will store values as [oldX, oldY, oldZ, timestamp]
 
   // main loop
   elapsed_time();   // start timer now
