@@ -19,8 +19,9 @@ By Oliver Heilmann
 # add 'search' directory to path (make sure you launch file from the working
 # directory rather than sub-dirs)
 import sys
-sys.path.append('./search')    
+sys.path.append('./search')
 
+from os import walk
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -42,16 +43,19 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-DEMPATH = 'maps/Colorado2_1mRES_2151x2046PIX.tiff'  # path to DEM tiff file. Set USEDEM to True if you want to use this
-USEDEM = True               # If set to true, real DEM data is used for path planning and Webots. 
-                            # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
-                            # ESTIMATOR PARAMS' below for more configuration options if this option
-                            # is selected.
-SAVEMAP = True              # If true then save the output elevation map else, only use it for path
-                            # planning and plotting graphs. If it is not saved, running the WeBots 
-                            # application will import the previous elevation map instead. This is 
-                            # useful where one wishes to test the accuracy of path planning at differing
-                            # resolutions while maintaining the same terrain and elevation details.
+FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+                                # to use the DEM TIFF file, else set to False to create synthetic elevation
+                                # maps. A path to a valid PNG terrain file is required regardless in order
+                                # to apply a texture to the resultant terrain.
+USEDEM = True           # If set to true, real DEM data is used for path planning and Webots. 
+                        # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
+                        # ESTIMATOR PARAMS' below for more configuration options if this option
+                        # is selected.
+SAVEMAP = True          # If true then save the output elevation map else, only use it for path
+                        # planning and plotting graphs. If it is not saved, running the WeBots 
+                        # application will import the previous elevation map instead. This is 
+                        # useful where one wishes to test the accuracy of path planning at differing
+                        # resolutions while maintaining the same terrain and elevation details.
 
 XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
@@ -90,13 +94,18 @@ OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than til
 
 class Terrain( Tile, LandTypes, DEM ):
     """Terrain class holds all functions relating to terrain generation."""
-    def __init__( self, *args, **kwargs ):
+    def __init__( self, DEMpath : str = None, PNGpath : str = None ):
         # initialise inherited land type class
         LandTypes.__init__( self )
 
         # initialise inherited digital elevation map class with location of TIFF file
-        DEM.__init__( self, impath = DEMPATH,
-                            shape = (YDIMENSION, XDIMENSION)    )
+        if USEDEM:
+            DEM.__init__( self, impath = DEMpath,
+                                shape = (YDIMENSION, XDIMENSION)    )
+
+        # store paths to allow for class-wide access
+        self.DEMpath = DEMpath
+        self.PNGpath = PNGpath
 
         # make a 2D array of tile objects, one for each node which contains
         # terrain "traits" or "attributes"...
@@ -241,10 +250,10 @@ boundingObject USE TERRAIN_MAP
             self.tiles[ iy, ix ].slope = slopeNodes[ iy, ix ]
         return self.slopeCorners
 
-    def image_map( self, imageDir = "webots_moose/protos/textures/TerrainFeatures.png", pixelRes = 2048, show = False ):
+    def image_map( self, pixelRes : int = 2048, show : bool = False ):
         """Divide terrain image into same number of grid squares as other terrain features."""
         # Load an color image in BGR, reformat and get key params
-        self.image = cv2.imread( imageDir, cv2.IMREAD_UNCHANGED )
+        self.image = cv2.imread( self.PNGpath, cv2.IMREAD_UNCHANGED )
         self.image = cv2.resize( self.image, (pixelRes, pixelRes), interpolation = cv2.INTER_AREA )
         row, col, _ = self.image.shape
         
@@ -308,7 +317,7 @@ boundingObject USE TERRAIN_MAP
             if tile.iop > 1: tile.iop = 1
             elif tile.iop < -1: tile.iop = -1
 
-            # calculate estimated velocity at tile using IOP
+            # calculate estimated velocity at tile using IOP in km/h
             tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + tile.iop )
 
         # get all tile velocities and put into list
@@ -355,6 +364,25 @@ def isPowerOfTwo( n ):
         if (n % 2 != 0): return False
         n = n // 2
     return True
+
+def getFilesFromFolder( path : str = None, tiff : str = None, png : str = None ):
+    """Get TIFF and PNG files from folder and return their directories."""
+    try:
+        filenames = next(walk(path), (None, None, []))[2]  # [] if no file
+        for file in filenames:
+            # get file extension and make lower case
+            extension = (file.split(".")[1]).lower()
+
+            # if tiff and png files are found, assign them unless user has pre-declared it
+            if extension == 'tiff' and not tiff: tiff = file
+            elif extension == 'png' and not png: png = file
+        # return the full path by joining folder path and file names
+        return '/'.join((path, tiff)), '/'.join((path, png))
+
+    except:
+        raise ValueError("""\n\n[ERROR]: Must provide a valid folder directory to access TIFF 
+         and PNG files. Check that the provided path is a valid directory and that both files
+         are contained within it.\n\n""")
 
 def get_xys( route ):
     xs = [coord[0] + 1.5*XSPACING for coord in route]
@@ -498,25 +526,25 @@ if __name__ == '__main__':
 
         # Otherwise add 1 to each value so that grid squares = nodes - 1 (needed to scale image size in Webots)
         XDIMENSION += 1; YDIMENSION += 1
-       
-    if ADD_NOISE:
-        samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
-        x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), samples) )
-        y_pts.extend( random.sample( range(0, YDIMENSION*YSPACING), samples) )
-
-        # delete values near starting area
-        # for incr, (x, y) in enumerate(zip(x_pts, y_pts)):
-        #     if x < H and y < H: del x_pts[incr], y_pts[incr]
+    
+    # Get TIFF and PNG files from user defined folder
+    print("[INFO]: Accessing TIFF and PNG Files From Folder...")
+    tiff, png = getFilesFromFolder( path = FOLDERPATH )
 
     # Initialise terrain class 
     print("[INFO]: Initialising Script, Preparing Variables and Classes...")
-    terrain = Terrain( )
+    terrain = Terrain( DEMpath = tiff, PNGpath = png )
 
     # Either Create intensity 2D numpy array using user defined params or get DEM data
     if USEDEM:
         print("[INFO]: Getting Digital Elevation Map (DEM) data...")
         elevationCorners = terrain.dem_to_tile()
     else:
+        if ADD_NOISE:
+            samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
+            x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), samples) )
+            y_pts.extend( random.sample( range(0, YDIMENSION*YSPACING), samples) )
+            
         print("[INFO]: Creating Elevation Map...")
         (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
 
@@ -637,6 +665,10 @@ if __name__ == '__main__':
                                             vmax= MAX_SLOPE_ANGLE,
                                             rasterized=True),
                             ax=ax2 )
+
+    slopeTiles *= (255.0/slopeTiles.max())    
+    slopeTiles = np.flipud(slopeTiles)
+    cv2.imwrite("/Users/Oliver/Desktop/slope.png", slopeTiles)
     cbar1.cmap.set_over('white')
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
