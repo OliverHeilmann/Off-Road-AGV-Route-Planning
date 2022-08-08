@@ -5,12 +5,7 @@ import cv2
 
 ############################## SETUP ###################################
 
-tiff_path = 'maps/bathDEM.tiff' # path to tiff file
-
-# im = cv2.imread('maps/Sentinel2_RGB20200506.tiff', -1)
-# cv2.imshow("img", im)
-# plt.imshow( cv2.cvtColor(im, cv2.COLOR_BGR2GRAY) )
-# plt.show()
+tiff_path = "maps/Colorado1/Colorado1_1mRES_2139x2198PIX.tiff" # path to tiff file
 
 #######################################################################
 
