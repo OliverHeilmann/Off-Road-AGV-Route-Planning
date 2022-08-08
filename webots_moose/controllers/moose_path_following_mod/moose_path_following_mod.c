@@ -31,7 +31,7 @@
 #define MOOSE_WHEEL_DIAMETER 0.635  // wheel diameter in meters [m] 
 
 ////////// For Moose path following //////////
-#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
+#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file
 #define TIME_STEP 16
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 #define DISTANCE_TOLERANCE 7.5  // (default = 1.5)

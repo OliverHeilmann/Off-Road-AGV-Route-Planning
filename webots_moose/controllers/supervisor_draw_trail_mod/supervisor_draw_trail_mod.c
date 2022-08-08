@@ -22,7 +22,7 @@
 #include <string.h>
 #include <webots/display.h>
 
-#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file
+#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file
 #define MAXIMUM_NUMBER_OF_COORDINATES 4000  // Size of the history.
 #define REFRESH_FACTOR 20                  // Refresh the trail every REFRESH_FACTOR * WorldInfo.basicTimeStep.
 

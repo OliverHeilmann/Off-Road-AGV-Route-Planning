@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TERRAIN_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_heatmap.wbo"  // path to terrain to be imported
-#define CONFIG_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/elevationmap_vehicle_config.txt" // path to vehicle configuration file 
+#define TERRAIN_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_elevations.wbo"  // path to terrain to be imported
+#define CONFIG_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file 
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 
 typedef struct _Vector {
