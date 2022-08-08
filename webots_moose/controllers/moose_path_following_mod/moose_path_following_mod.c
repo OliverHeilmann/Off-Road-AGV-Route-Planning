@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <webots/camera.h>
 #include <webots/compass.h>
@@ -31,7 +32,6 @@
 #define MOOSE_WHEEL_DIAMETER 0.635  // wheel diameter in meters [m] 
 
 ////////// For Moose path following //////////
-#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file
 #define TIME_STEP 16
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 #define DISTANCE_TOLERANCE 7.5  // (default = 1.5)
@@ -87,6 +87,20 @@ static bool old_autopilot = true;
 static int old_key = -1;
 bool first = true;
 float displacement = 0.0;
+
+// get path to Webots config files
+static char* get_config_path( ){
+  static char cwd[400];
+  char * pch;
+  
+  // get current working directory
+  getcwd(cwd, 400);
+  
+  // get directory of top level repo directory
+  pch=strrchr(cwd, '/');
+  cwd[pch-24-cwd] = '\0';
+  return cwd;
+}
 
 static double modulus_double(double a, double m) {
   const int div = (int)(a / m);
@@ -263,12 +277,16 @@ static Config* vehicle_config ( int *target_points_size ) {
   // setup Waypoint vector and Terrain struct to add values to
   Vector test_targets[*target_points_size];
   TerrainRGB terrain_types[*target_points_size];
-  
+
+  // get parent path, then add relative path extension to config file
+  char* parentpath = get_config_path();
+  char* fullpath = strcat( parentpath, "maps/WEBOTS_vehicle_config.txt");
+
   // create vector to append waypoints to
   char * line = NULL;
   size_t len = 0;
   ssize_t read;
-  FILE * fp = fopen(PATH, "r");
+  FILE * fp = fopen(fullpath, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
 

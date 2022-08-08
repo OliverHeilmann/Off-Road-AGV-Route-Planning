@@ -8,9 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#define TERRAIN_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_elevations.wbo"  // path to terrain to be imported
-#define CONFIG_PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file 
 #define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
 
 typedef struct _Vector {
@@ -18,6 +17,20 @@ typedef struct _Vector {
   double y;
   double z;
 } Vector;
+
+// get path to Webots config files
+static char* get_config_path( ){
+  static char cwd[400];
+  char * pch;
+  
+  // get current working directory
+  getcwd(cwd, 400);
+  
+  // get directory of top level repo directory
+  pch=strrchr(cwd, '/');
+  cwd[pch-24-cwd] = '\0';
+  return cwd;
+}
 
 // Read Terrain .wbo shape file (pretend it is text file) and return string of contents
 char* readfile(char *filename)
@@ -110,10 +123,14 @@ static void create_route_shape( int *max_num_coords ) {
 
 // Open the vehicle configuration file and extract the translation and rotation values
 Vector* vehicle_config( double *new_translation, int *tps, Vector coords[] ) {
+  // get parent path, then add relative path extension to config file
+  char* parentpath = get_config_path();
+  char* configPath = strcat( parentpath, "maps/WEBOTS_vehicle_config.txt");
+
   char * line = NULL;
   size_t len = 0;
   ssize_t read;
-  FILE * fp = fopen(CONFIG_PATH, "r");
+  FILE * fp = fopen(configPath, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
 
@@ -170,8 +187,12 @@ Vector* vehicle_config( double *new_translation, int *tps, Vector coords[] ) {
 int main(int argc, char **argv) {
   wb_robot_init();
 
+  // get parent path, then add relative path extension to config file
+  char* parentpath = get_config_path();
+  char* terrainPath = strcat( parentpath, "maps/WEBOTS_elevations.wbo");
+
   // get terrain .wbo file and return the string of contents
-  char *terrain_string = readfile( TERRAIN_PATH );
+  char *terrain_string = readfile( terrainPath );
   
   // if a result is returned, import it
   if (terrain_string)

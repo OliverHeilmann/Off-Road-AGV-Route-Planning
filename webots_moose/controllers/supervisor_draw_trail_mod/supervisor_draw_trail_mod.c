@@ -21,10 +21,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <webots/display.h>
+#include <unistd.h>
 
-#define PATH "/Users/Oliver/Documents/CODING/Python_Prgms/WeBots_ElevationMap/maps/WEBOTS_vehicle_config.txt" // path to vehicle configuration file
 #define MAXIMUM_NUMBER_OF_COORDINATES 4000  // Size of the history.
 #define REFRESH_FACTOR 20                  // Refresh the trail every REFRESH_FACTOR * WorldInfo.basicTimeStep.
+
+// get path to Webots config files
+static char* get_config_path( ){
+  static char cwd[400];
+  char * pch;
+  
+  // get current working directory
+  getcwd(cwd, 400);
+  
+  // get directory of top level repo directory
+  pch=strrchr(cwd, '/');
+  cwd[pch-24-cwd] = '\0';
+  return cwd;
+}
 
 // Create the trail shape with the correct number of coordinates.
 static void create_trail_shape() {
@@ -65,10 +79,14 @@ static void create_trail_shape() {
 
 // Open the vehicle configuration file and extract the translation and rotation values
 static void vehicle_config ( double *new_translation, double *new_rotation ) {
+  // get parent path, then add relative path extension to config file
+  char* parentpath = get_config_path();
+  char* configPath = strcat( parentpath, "maps/WEBOTS_vehicle_config.txt");
+  
   char * line = NULL;
   size_t len = 0;
   ssize_t read;
-  FILE * fp = fopen(PATH, "r");
+  FILE * fp = fopen(configPath, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
 
