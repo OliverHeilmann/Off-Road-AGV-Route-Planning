@@ -217,11 +217,11 @@ boundingObject USE TERRAIN_MAP
                 )
         if SAVEMAP:
             try:
-                with open('maps/elevationmap_heatmap.wbo', 'w') as f:
+                with open('maps/WEBOTS_elevations.wbo', 'w') as f:
                     f.write( formatted )
                     f.close()
             except:
-                raise ValueError('"elevationmap_heatmap.wbo" did not save!')
+                raise ValueError('"WEBOTS_elevations.wbo" did not save!')
 
     def slope_map( self, elevCnr : np.ndarray ):
         """Calculate the slope map using previously generated terrain elevation data."""
@@ -479,11 +479,11 @@ Vehicle {{
             )
     # Save waypoints as text file usable in WeBots
     try:
-        with open('maps/elevationmap_vehicle_config.txt', "w") as f:
+        with open('maps/WEBOTS_vehicle_config.txt', "w") as f:
             f.write( formatted )
             f.close()
     except:
-        raise ValueError('"maps/elevationmap_vehicle_config.txt" did not save!')
+        raise ValueError('"maps/WEBOTS_vehicle_config.txt" did not save!')
 
 def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
     """Get the elevation per distance travelled, return as xs and ys lists."""
@@ -673,10 +673,6 @@ if __name__ == '__main__':
                                             vmax= MAX_SLOPE_ANGLE,
                                             rasterized=True),
                             ax=ax2 )
-
-    slopeTiles *= (255.0/slopeTiles.max())    
-    slopeTiles = np.flipud(slopeTiles)
-    cv2.imwrite("/Users/Oliver/Desktop/slope.png", slopeTiles)
     cbar1.cmap.set_over('white')
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
