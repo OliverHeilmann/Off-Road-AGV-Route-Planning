@@ -128,8 +128,8 @@ def totalDistTime( route, maze, gridsize ):
         to_mps = lambda v_kmph : (v_kmph * 1000) / pow(60.0, 2) # convert km/hour to m/s
         if (maze[curr].velocity + maze[nxt].velocity) > 0.:
             total_Dist += dD( curr, nxt, gridsize )
-            total_Time +=   (2 * dD( curr, nxt, gridsize )) /                       \
-                            (to_mps(maze[curr].velocity) + to_mps(maze[nxt].velocity))
+            total_Time +=   (dD( curr, nxt, gridsize )) /                       \
+                            (to_mps( 0.5*(maze[curr].velocity+maze[nxt].velocity) ))
         else:
             raise ValueError("""\n
     If velocity in tile = 0 then this means IOP tile resolution is so much lower
