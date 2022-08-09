@@ -9,6 +9,7 @@ build
 *.json
 *.tiff
 resize.py
+results*.png
 
 # ignore terrain folders
 Colorado*

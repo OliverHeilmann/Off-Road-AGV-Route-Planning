@@ -645,7 +645,7 @@ if __name__ == '__main__':
     print(f"[INFO]: Algorithm Finished After: {endtime} [s]!")
 
     ##### PLOTTING HEADER #####
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(9.5,8.4))
     fig.suptitle('Terrain Heatmaps With Path Planning\n(Max Slope: {} deg, Max Velocity: {} Km/h)'.format(
                                                                     round(MAX_SLOPE_ANGLE/math.pi * 180,2),
                                                                     MAX_VELOCITY), 
@@ -700,6 +700,9 @@ if __name__ == '__main__':
     # plot A* 
     ax4.plot(x_rt_astar, y_rt_astar,'r-')
     ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+    # plot axes and legend
+    ax4.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
+                ymin=0, ymax=(YDIMENSION-1)*YSPACING)
     ax4.legend(['Greedy', 'A*'])
     # apply padding as per vehicle size vs tile size requirements
     vel2dArr = apply_padding_mask( source = vel2dArr, mask = padded_obstacle_mask, min = 0 )
@@ -740,6 +743,11 @@ if __name__ == '__main__':
     ax5.plot(dists_astar, elevs_astar,'r-')
     ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
     ax5.legend(['Greedy', 'A*'])
+
+    ##### SAVING RESULTANT PLOTS #####
+    fig.tight_layout(pad=0.6, w_pad=0.2, h_pad=0.2)
+    fig.savefig('results_passability.png')
+    fig2.savefig('results_elevation_gain.png')
 
     plt.show()
     ###################################################
