@@ -21,8 +21,12 @@ By Oliver Heilmann
 import sys
 sys.path.append('./search')
 
-from os import walk
+# suppress deprecation warnings (for matplotlib)
+import warnings
+warnings.filterwarnings( "ignore" )
 import matplotlib.pyplot as plt
+
+from os import walk
 import numpy as np
 import time
 import math
@@ -58,8 +62,8 @@ SAVEMAP = True          # If true then save the output elevation map else, only 
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 64   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 20         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -91,6 +95,7 @@ END = (455,420)             # index value which agent ends at after including co
 USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
 SHOW_OUTOFBOUNDS = True     # If true, then mark areas which are 'No Go' on Slope and passability maps i.e. block out in white
+SHOW_LABELS      = True     # If true then add graph labels to axes
 
 #######################################################################
 
@@ -651,14 +656,13 @@ if __name__ == '__main__':
     # ax1.plot(x_pts,y_pts,'ro')
     ax1.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
-    # ax1.set_xlabel('Meters'); ax1.set_ylabel('Meters')
     elevationTiles = cv2.resize( elevationCorners, (YDIMENSION-1,XDIMENSION-1) )
-    fig.colorbar(   ax1.pcolormesh( terrain.x_mesh,
-                                    terrain.y_mesh,
-                                    elevationTiles,
-                                    rasterized=True),
-                    ax=ax1,)
-
+    cbar0 = fig.colorbar(   ax1.pcolormesh( terrain.x_mesh,
+                            terrain.y_mesh,
+                            elevationTiles,
+                            rasterized=True),
+                        ax=ax1,)
+   
     # ##### SLOPE HEATMAP OUTPUT #####
     ax2.set(title="Slope Heatmap")
     # plot Greedy
@@ -678,7 +682,7 @@ if __name__ == '__main__':
                                             vmax= MAX_SLOPE_ANGLE,
                                             rasterized=True),
                             ax=ax2 )
-    if SHOW_OUTOFBOUNDS: cbar1.cmap.set_over('white')
+   
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
@@ -705,7 +709,29 @@ if __name__ == '__main__':
                                             vmin=0.001,
                                             rasterized=True ), 
                             ax=ax4 )
-    if SHOW_OUTOFBOUNDS: cbar2.cmap.set_under('white')
+
+    ##### GRAPH PLOTTING USER OPTIONS #####
+    # Set thresholds for heatmaps i.e. slopes > vehicle slope max marked as white
+    if SHOW_OUTOFBOUNDS:
+        cbar1.cmap.set_over('white')
+        cbar2.cmap.set_under('white')
+
+    # Add labels to graphs
+    if SHOW_LABELS:
+        # plot 0,0
+        ax1.set_xlabel('X Position [m]'); ax1.set_ylabel('Y Position [m]')
+        cbar0.ax.set_ylabel('Elevation [m]', rotation=270, labelpad=15,)
+
+        # plot 0,1
+        ax2.set_xlabel('X Position [m]'); ax2.set_ylabel('Y Position [m]')
+        cbar1.ax.set_ylabel('Slope [rad]', rotation=270, labelpad=15,)
+
+        # plot 1,0
+        ax3.set_xlabel('X Position [pixels]'); ax3.set_ylabel('Y Position [pixels]')
+        
+        # plot 1,1
+        ax4.set_xlabel('X Position [m]'); ax4.set_ylabel('Y Position [m]')
+        cbar2.ax.set_ylabel('Vehicle Velocity [km/h]', rotation=270, labelpad=15,)
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
     fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
