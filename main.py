@@ -48,7 +48,7 @@ MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Colorado2'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -62,8 +62,8 @@ SAVEMAP = True          # If true then save the output elevation map else, only 
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 64   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 20         # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -90,7 +90,9 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
 START = (50,320)            # index value which agent starts at after including corner size (row, col)
-END = (455,420)             # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+END   = (455,420)           # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+                            # Colorado1 END = (455,420)
+                            # Colorado2 END = (345,220)
 
 USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
@@ -646,7 +648,8 @@ if __name__ == '__main__':
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(9.5,8.4))
-    fig.suptitle('Terrain Heatmaps With Path Planning\n(Max Slope: {} deg, Max Velocity: {} Km/h)'.format(
+    fig.suptitle('Terrain Heatmaps With Path Planning\n(Terrain: {}, Max Slope: {} deg, Max Velocity: {} Km/h)'.format(
+                                                                    (FOLDERPATH.split("/")[1]).upper(),
                                                                     round(MAX_SLOPE_ANGLE/math.pi * 180,2),
                                                                     MAX_VELOCITY), 
                                                                     fontsize=16)
@@ -674,7 +677,7 @@ if __name__ == '__main__':
     # plot axes and legend
     ax2.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
-    ax2.legend(['Greedy', 'A*'])
+    # ax2.legend(['Greedy', 'A*'])
     slopeTiles = cv2.resize( slopeCorners, (YDIMENSION-1,XDIMENSION-1) )
     cbar1 = fig.colorbar(   ax2.pcolormesh( terrain.x_mesh,
                                             terrain.y_mesh,
@@ -682,7 +685,10 @@ if __name__ == '__main__':
                                             vmax= MAX_SLOPE_ANGLE,
                                             rasterized=True),
                             ax=ax2 )
-   
+    # get coverage of non-passable tiles (of total i.e. as %)
+    r, c = slopeTiles.shape
+    coverageObstacles = round(100*(slopeTiles > MAX_SLOPE_ANGLE).sum() / (r * c),2)
+    print(f"[TEST INFO]: Slopes > Vehicle Max: {coverageObstacles} %")
 
     ##### PLOT TERRAIN CLASSES IMAGE IN RGB #####
     ax3.set(title="Terrain Classes Image")
@@ -690,7 +696,6 @@ if __name__ == '__main__':
     # plot empty data and show key of colours and respective classes
     [  ax3.plot(np.NaN, np.NaN, '-', color=terrain.get_mid_mtlb(key), label=key) 
                         for c, key in enumerate(terrain.get_type_keys(drop='Slope')) ]
-    # ax3.legend()
 
     ##### VELOCITY HEATMAP OUTPUT #####
     ax4.set(title="Vehicle Velocity Heatmap")
@@ -712,6 +717,10 @@ if __name__ == '__main__':
                                             vmin=0.001,
                                             rasterized=True ), 
                             ax=ax4 )
+    # get coverage of non-passable tiles (of total i.e. as %)
+    r, c = vel2dArr.shape
+    coverageObstacles = round(100*(vel2dArr <= 0).sum() / (r * c),2)
+    print(f"[TEST INFO]: Coverage of Non-Passable Terrain: {coverageObstacles} %")
 
     ##### GRAPH PLOTTING USER OPTIONS #####
     # Set thresholds for heatmaps i.e. slopes > vehicle slope max marked as white
@@ -737,17 +746,18 @@ if __name__ == '__main__':
         cbar2.ax.set_ylabel('Vehicle Velocity [km/h]', rotation=270, labelpad=15,)
 
     ##### ELEVATION OVER DISTANCE OUTPUT #####
-    fig2, (ax5) = plt.subplots(nrows=1, ncols=1)
+    fig2, (ax5) = plt.subplots(nrows=1, ncols=1, figsize=(9.5,4))
     ax5.set(title="Elevation Gain Over Distance Travelled")
     ax5.plot(dists_greedy, elevs_greedy,'g-')
     ax5.plot(dists_astar, elevs_astar,'r-')
+    # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
     ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
     ax5.legend(['Greedy', 'A*'])
 
     ##### SAVING RESULTANT PLOTS #####
     fig.tight_layout(pad=0.6, w_pad=0.2, h_pad=0.2)
-    fig.savefig('results_passability.png')
-    fig2.savefig('results_elevation_gain.png')
+    fig.savefig('results/passability.png')
+    fig2.savefig('results/elevation_gain.png')
 
     plt.show()
     ###################################################
