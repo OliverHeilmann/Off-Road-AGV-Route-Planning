@@ -15,7 +15,7 @@ class LandTypes:
         # terrain classes dictionary when user specifies...
         # ------TYPE--------------SEE SELF.CLASSES FOR WHICH VALUE CORRESPONDS TO LIST ELEMENT------
         vrf = {
-            "MOOSE"          : [0.3,    0.5,    -1.0,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4],
+            "MOOSE"          : [0.8,    0.5,    -1.0,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4],
             "HUMAN"          : [0.3,    0.1,    -1.0,   -0.8,   -0.8,   -0.1,  -0.1, -0.4,    -0.7],
             "MOTOCROSS BIKE" : [0.8,    0.65,   -1.0,   -0.9,   -1.0,   -0.4,  -0.1, -0.6,    -0.3],
         }

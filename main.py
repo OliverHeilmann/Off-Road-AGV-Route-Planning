@@ -16,6 +16,9 @@ Description:
 
 By Oliver Heilmann
 """
+# For scalene profiling use the following cmd:
+#   --> /Users/Oliver/opt/anaconda3/envs/DISS/bin/python -m scalene main.py 
+
 # add 'search' directory to path (make sure you launch file from the working
 # directory rather than sub-dirs)
 import sys
@@ -41,14 +44,14 @@ from astarsearch import astarRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-VEHICLE = "HUMAN"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
+VEHICLE = "MOOSE"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
 MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado3'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -56,7 +59,7 @@ USEDEM = True           # If set to true, real DEM data is used for path plannin
                         # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                         # ESTIMATOR PARAMS' below for more configuration options if this option
                         # is selected.
-SAVEMAP = True          # If true then save the output elevation map else, only use it for path
+SAVEMAP = False         # If true then save the output elevation map else, only use it for path
                         # planning and plotting graphs. If it is not saved, running the WeBots 
                         # application will import the previous elevation map instead. This is 
                         # useful where one wishes to test the accuracy of path planning at differing
@@ -91,10 +94,13 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
 START = (50,320)            # index value which agent starts at after including corner size (row, col)
 END   = (455,420)           # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
-                            # Colorado1 END = (455,420)
+                            # Colorado1, Louisiana1 END = (455,420)
                             # Colorado2 END = (345,220)
 
-RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
+IOP_ORDER        = 1        # Choose an odd number e.g. [1,3,5,7,9...]. This number changes the order of the equation
+                            # i.e. 1 = 1st Order Equation with a linearly changing velocity vs IOP value. 3 = 3rd order
+                            # which gives a cubic shape. All have min = (0,-1) and max = (1, MAX_VELOCITY)
+RSQ_THRESHOLD    = 0.9999   # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
@@ -333,7 +339,7 @@ boundingObject USE TERRAIN_MAP
             elif tile.iop < -1: tile.iop = -1
 
             # calculate estimated velocity at tile using IOP in km/h
-            tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + tile.iop )
+            tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + (tile.iop)**IOP_ORDER )
 
         # get all tile velocities and put into list
         iops = [obj.iop for row in self.tiles for obj in row]
@@ -369,7 +375,7 @@ boundingObject USE TERRAIN_MAP
                 cv2.destroyAllWindows()
             return img_dilation # return dilated obstacle mask
         else:
-            print('[INFO]: No Padding Needed...')
+            print(' No Padding Needed...', end='')
             return slopeNodes   # obstacle mask
 
 def isPowerOfTwo( n ):
@@ -546,44 +552,62 @@ if __name__ == '__main__':
         XDIMENSION += 1; YDIMENSION += 1
     
     # Get TIFF and PNG files from user defined folder
-    print("[INFO]: Accessing TIFF and PNG Files From Folder...")
+    print("[INFO]: Accessing TIFF and PNG Files From Folder...", end = '')
+    start = time.time()
     tiff, png = getFilesFromFolder( path = FOLDERPATH )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Initialise terrain class 
-    print("[INFO]: Initialising Script, Preparing Variables and Classes...")
+    print("[INFO]: Initialising Script, Preparing Variables and Classes...", end = '')
+    start = time.time()
     terrain = Terrain( DEMpath = tiff, PNGpath = png )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Either Create intensity 2D numpy array using user defined params or get DEM data
     if USEDEM:
-        print("[INFO]: Getting Digital Elevation Map (DEM) data...")
+        print("[INFO]: Getting Digital Elevation Map (DEM) data...", end = '')
+        start = time.time()
         elevationCorners = terrain.dem_to_tile()
+        print( f" {round((time.time() - start), 2)} s")
     else:
         if ADD_NOISE:
             samples = SAMPLES if SAMPLES <= np.mean([XDIMENSION, YDIMENSION]) else int(XDIMENSION/2)
             x_pts.extend( random.sample( range(0, XDIMENSION*XSPACING), samples) )
             y_pts.extend( random.sample( range(0, YDIMENSION*YSPACING), samples) )
             
-        print("[INFO]: Creating Elevation Map...")
+        print("[INFO]: Creating Elevation Map...", end = '')
+        start = time.time()
         (_,_), elevationCorners = terrain.elevation_map( x_pts, y_pts )
+        print( f" {round((time.time() - start), 2)} s")
 
-    print("[INFO]: Dividing Terrain Image into Grid Squares...")
+    print("[INFO]: Dividing Terrain Image into Grid Squares...", end = '')
+    start = time.time()
     _ = terrain.image_map( pixelRes = PIXEL_RESOLUTION, show = False )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Generate output .wbo file using 2D numpy array
-    print("[INFO]: Creating WeBots Map...")
+    print("[INFO]: Creating WeBots Map...", end = '')
+    start = time.time()
     terrain.wbo_map( elevationCorners )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Slope Map generation
-    print("[INFO]: Calculating Slope Map...")
+    print("[INFO]: Calculating Slope Map...", end = '')
+    start = time.time()
     slopeCorners = terrain.slope_map( elevationCorners )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Index of Passability generation
-    print("[INFO]: Calculating Passability Map...")
+    print("[INFO]: Calculating Passability Map...", end = '')
+    start = time.time()
     iop2dArr, vel2dArr = terrain.iop_map( )
+    print( f" {round((time.time() - start), 2)} s")
 
     # Pad obstacles if vehicle size is larger than the grid square (tile) size
-    print("[INFO]: Padding Obstacles According to Vehicle Dimensions...")
+    print("[INFO]: Padding Obstacles According to Vehicle Dimensions...", end = '')
+    start = time.time()
     padded_obstacle_mask = terrain.pad_obstacles( showDilate = True )
+    print( f" {round((time.time() - start), 2)} s")
 
     try:
         # create empty lists to overwrite if paths are found
@@ -650,12 +674,12 @@ if __name__ == '__main__':
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(9.5,8.4))
-    fig.suptitle('Terrain Heatmaps With Path Planning\n(Vehicle: {}, Terrain: {}, Slope_max: {} deg, V_max: {} Km/h)'.format(
+    fig.suptitle('Terrain Heatmaps With Path Planning\n(Vehicle: {}, Terrain: {}, Slope-Max: {} deg, V-Max: {} Km/h)'.format(
                                                                     VEHICLE,
                                                                     (FOLDERPATH.split("/")[1]).upper(),
                                                                     round(MAX_SLOPE_ANGLE/math.pi * 180,2),
                                                                     MAX_VELOCITY), 
-                                                                    fontsize=16)
+                                                                    fontsize=14)
     
     # add starting and ending positions now so that they are on map even if
     # no route is found with path planners 
