@@ -10,22 +10,33 @@ import cv2
 
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
-    def __init__( self, ):
+    def __init__( self, vehicle = "MOOSE" ):
+        # Define three vehicles for testing purposes, each one will be used in the 
+        # terrain classes dictionary when user specifies...
+        # ------TYPE--------------SEE SELF.CLASSES FOR WHICH VALUE CORRESPONDS TO LIST ELEMENT------
+        vrf = {
+            "MOOSE"          : [0.3,    0.5,    -1.0,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4],
+            "HUMAN"          : [0.3,    0.1,    -1.0,   -0.8,   -0.8,   -0.1,  -0.1, -0.4,    -0.7],
+            "MOTOCROSS BIKE" : [0.8,    0.65,   -1.0,   -0.9,   -1.0,   -0.4,  -0.1, -0.6,    -0.3],
+        }
+
         # HSV colours and their ranges as [type : [rgb, mid, lower, upper, VRF]]
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
-        # ------TYPE--------------RGB------------MID HSV--------LOWER HSV-------UPPER HSV ------VRF--
+        # ------TYPE--------------RGB------------MID HSV--------LOWER HSV-------UPPER HSV ---------VEHICLE VRF----
         self.classes = {
-            "Firebreak" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40]  , [15, 15, 40]   ,   0.3],   # if road then say +0.8
-            "Open_Area" : [ [144, 208, 80] , [45, 156, 208] , [30, 141, 168] , [60, 171, 248] ,   0.5],   # No white spaces!
-            "River"     : [ [0, 127, 255]  , [105, 255, 255], [90, 240, 215] , [120, 270, 295],  -1.0],
-            "Stream"    : [ [117, 255, 223], [83, 137, 255] , [68, 122, 215] , [98, 152, 295] ,  -0.8],
-            "Swamp"     : [ [237, 124, 49] , [12, 202, 237] , [-3, 187, 197] , [27, 217, 277] ,  -0.8],
-            "Forest"    : [ [20, 129, 20]  , [60, 215, 129] , [45, 200, 89]  , [75, 230, 169] ,  -0.8],
-            "Orchard"   : [ [213, 125, 174], [163, 105, 213], [148, 90, 173] , [178, 120, 253],  -0.5],
-            "Snow"      : [ [255, 255, 255], [0, 0, 255]    , [-15, -15, 215], [15, 15, 295]  ,  -0.2],
-            "Slope"     : [ [             ], [            ] , [            ] , [            ] ,  -0.4],
+            "Firebreak" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40]  , [15, 15, 40]   ,  vrf[vehicle][0]],
+            "Open_Area" : [ [144, 208, 80] , [45, 156, 208] , [30, 141, 168] , [60, 171, 248] ,  vrf[vehicle][1]],
+            "River"     : [ [0, 127, 255]  , [105, 255, 255], [90, 240, 215] , [120, 270, 295],  vrf[vehicle][2]],
+            "Stream"    : [ [117, 255, 223], [83, 137, 255] , [68, 122, 215] , [98, 152, 295] ,  vrf[vehicle][3]],
+            "Swamp"     : [ [237, 124, 49] , [12, 202, 237] , [-3, 187, 197] , [27, 217, 277] ,  vrf[vehicle][4]],
+            "Forest"    : [ [20, 129, 20]  , [60, 215, 129] , [45, 200, 89]  , [75, 230, 169] ,  vrf[vehicle][5]],
+            "Orchard"   : [ [213, 125, 174], [163, 105, 213], [148, 90, 173] , [178, 120, 253],  vrf[vehicle][6]],
+            "Snow"      : [ [255, 255, 255], [0, 0, 255]    , [-15, -15, 215], [15, 15, 295]  ,  vrf[vehicle][7]],
+            "Slope"     : [ [             ], [            ] , [            ] , [            ] ,  vrf[vehicle][8]],
         }
+        # return object with properties for passing to tile class later
+        return self
 
     def get_RGB_WeBots( self, maxvel = 30 ):
         """Returns the Terrain type, mid colour in RBG and the VRF as dictionary"""
@@ -59,11 +70,11 @@ class LandTypes:
         return f"{list(self.classes.keys())}"
 
 
-class Tile( LandTypes ):
+class Tile:
     """Each section of the terrain has a set of attributes/ traits. Use this class to check if passable."""
-    def __init__( self ):
-        # initialise inherited land type class
-        LandTypes.__init__( self )
+    def __init__( self, landObj : LandTypes = None ):
+        # make LandTypes object accessible in this class
+        self.landObj = landObj
 
         # initialise the traits contained in the tile
         self.elevation = float
@@ -73,10 +84,14 @@ class Tile( LandTypes ):
         self.velocity = float
         self.obstacle = None    # after calculating if obstacle, update its internal value to save on next call (either T/F)
 
+    def get_type_info( self, key : str ):
+        """Return colours a list of structure [mid, lower, upper, VRF]."""
+        return self.landObj.classes[ key ]
+
     def traitCoverage( self, land_class : str ):
         """Check coverage area of land class, return value between 0 and 1."""
         image_hsv = cv2.cvtColor( self.image, cv2.COLOR_BGR2HSV )   # get hsv of image
-        lower, upper = self.get_colour_range( land_class )          # get colour range
+        lower, upper = self.landObj.get_colour_range( land_class )          # get colour range
         image_mask = cv2.inRange( image_hsv, lower, upper )         # create mask
         return cv2.countNonZero(image_mask) / (self.image.size/self.image.shape[-1])    # ratio of colour to whole image
 

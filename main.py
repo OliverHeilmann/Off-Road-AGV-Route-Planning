@@ -41,11 +41,11 @@ from astarsearch import astarRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
+VEHICLE = "HUMAN"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
 MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
-RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 
 #### WEBOTS TERRAIN MAP PARAMS
 FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
@@ -94,7 +94,9 @@ END   = (455,420)           # index value which agent ends at after including co
                             # Colorado1 END = (455,420)
                             # Colorado2 END = (345,220)
 
+RSQ_THRESHOLD = 0.9999      # R-Squared value for determining waypoints (lower val ∝ less waypoints)
 USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
 SHOW_OUTOFBOUNDS = True     # If true, then mark areas which are 'No Go' on Slope and passability maps i.e. block out in white
 SHOW_LABELS      = True     # If true then add graph labels to axes
@@ -105,7 +107,7 @@ class Terrain( Tile, LandTypes, DEM ):
     """Terrain class holds all functions relating to terrain generation."""
     def __init__( self, DEMpath : str = None, PNGpath : str = None ):
         # initialise inherited land type class
-        LandTypes.__init__( self )
+        landtypes = LandTypes.__init__( self, vehicle = VEHICLE )
 
         # initialise inherited digital elevation map class with location of TIFF file
         if USEDEM:
@@ -120,7 +122,7 @@ class Terrain( Tile, LandTypes, DEM ):
         # terrain "traits" or "attributes"...
         self.tiles = np.zeros( (YDIMENSION-1, XDIMENSION-1), dtype=object )
         for iy, ix in np.ndindex( self.tiles.shape ):
-            self.tiles[ iy, ix ] = Tile()
+            self.tiles[ iy, ix ] = Tile( landObj = landtypes )  # pass the initialised landtypes object
 
         # prepare to store values, create variable names
         x_grid = np.arange(0,XDIMENSION*XSPACING,XSPACING)
@@ -648,12 +650,19 @@ if __name__ == '__main__':
 
     ##### PLOTTING HEADER #####
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(9.5,8.4))
-    fig.suptitle('Terrain Heatmaps With Path Planning\n(Terrain: {}, Max Slope: {} deg, Max Velocity: {} Km/h)'.format(
+    fig.suptitle('Terrain Heatmaps With Path Planning\n(Vehicle: {}, Terrain: {}, Slope_max: {} deg, V_max: {} Km/h)'.format(
+                                                                    VEHICLE,
                                                                     (FOLDERPATH.split("/")[1]).upper(),
                                                                     round(MAX_SLOPE_ANGLE/math.pi * 180,2),
                                                                     MAX_VELOCITY), 
                                                                     fontsize=16)
     
+    # add starting and ending positions now so that they are on map even if
+    # no route is found with path planners 
+    shift = lambda n : (n*YSPACING) + 1.5*YSPACING
+    y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+    y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
     # ax1.plot(x_pts,y_pts,'ro')
@@ -670,10 +679,16 @@ if __name__ == '__main__':
     ax2.set(title="Slope Heatmap")
     # plot Greedy
     ax2.plot(x_rt_greedy, y_rt_greedy,'g-')
-    ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+    if SHOW_WAYPOINTS: ax2.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+
     # plot A* 
     ax2.plot(x_rt_astar, y_rt_astar,'r-')
-    ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+    if SHOW_WAYPOINTS: ax2.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+
+    # plot Start and End Points
+    ax2.plot(shift(START[1]), shift(START[0]),'bo', label='_nolegend_')
+    ax2.plot(shift(END[1]), shift(END[0]),'ro', label='_nolegend_')
+
     # plot axes and legend
     ax2.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
@@ -701,10 +716,16 @@ if __name__ == '__main__':
     ax4.set(title="Vehicle Velocity Heatmap")
     # plot Greedy
     ax4.plot(x_rt_greedy, y_rt_greedy,'g-')
-    ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+    if SHOW_WAYPOINTS: ax4.plot(x_wpts_greedy, y_wpts_greedy,'ko', label='_nolegend_')
+    
     # plot A* 
     ax4.plot(x_rt_astar, y_rt_astar,'r-')
-    ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+    if SHOW_WAYPOINTS: ax4.plot(x_wpts_astar, y_wpts_astar,'bo', label='_nolegend_')
+
+    # plot Start and End Points
+    ax4.plot(shift(START[1]), shift(START[0]),'bo', label='_nolegend_')
+    ax4.plot(shift(END[1]), shift(END[0]),'ro', label='_nolegend_')
+
     # plot axes and legend
     ax4.axis(   xmin=0, xmax=(XDIMENSION-1)*XSPACING,
                 ymin=0, ymax=(YDIMENSION-1)*YSPACING)
