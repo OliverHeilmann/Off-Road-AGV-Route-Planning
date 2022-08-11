@@ -23,7 +23,7 @@
 #include <webots/display.h>
 #include <unistd.h>
 
-#define MAXIMUM_NUMBER_OF_COORDINATES 4000  // Size of the history.
+#define MAXIMUM_NUMBER_OF_COORDINATES 8000  // Size of the history.
 #define REFRESH_FACTOR 20                  // Refresh the trail every REFRESH_FACTOR * WorldInfo.basicTimeStep.
 
 // get path to Webots config files

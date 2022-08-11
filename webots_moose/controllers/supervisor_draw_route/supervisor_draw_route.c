@@ -10,7 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAXIMUM_NUMBER_OF_COORDINATES 2000  // Max size of the history.
+#define MAXIMUM_NUMBER_OF_COORDINATES 8000  // Max size of the history.
 
 typedef struct _Vector {
   double x;
@@ -92,7 +92,7 @@ static void create_route_shape( int *max_num_coords ) {
     wb_supervisor_node_remove(existing_route);
 
   int i;
-  char route_string[0x10000] = "\0";  // Initialize a big string which will contain the TRAIL node.
+  char route_string[0x100000] = "\0";  // Initialize a big string which will contain the TRAIL node.
 
   // Create the MAP_ROUTE Shape.
   strcat(route_string, "DEF MAP_ROUTE Shape {\n");
