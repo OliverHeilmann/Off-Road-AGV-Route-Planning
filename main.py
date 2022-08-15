@@ -45,13 +45,13 @@ from astarsearch import astarRoute3D
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
 VEHICLE = "MOOSE"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
-MAX_SLOPE_ANGLE = 0.523599  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
+MAX_SLOPE_ANGLE = 0.349066  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Colorado1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Louisiana1'  # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -59,14 +59,14 @@ USEDEM = True           # If set to true, real DEM data is used for path plannin
                         # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                         # ESTIMATOR PARAMS' below for more configuration options if this option
                         # is selected.
-SAVEMAP = False         # If true then save the output elevation map else, only use it for path
+SAVEMAP = False          # If true then save the output elevation map else, only use it for path
                         # planning and plotting graphs. If it is not saved, running the WeBots 
                         # application will import the previous elevation map instead. This is 
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 2048   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 1         # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 16   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 128         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -92,8 +92,8 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (468,1744)          # index value which agent starts at after including corner size (row, col)
-END   = (1900,1684)         # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (2,10)				# index value which agent starts at after including corner size (row, col)
+END   = (13,12)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # START = (50,320)
                             # Colorado1, Louisiana1 END = (455,420)
                             # Colorado2 END = (345,220)
@@ -101,11 +101,11 @@ IOP_ORDER        = 1        # Choose an odd number e.g. [1,3,5,7,9...]. This num
                             # i.e. 1 = 1st Order Equation with a linearly changing velocity vs IOP value. 3 = 3rd order
                             # which gives a cubic shape. All have min = (0,-1) and max = (1, MAX_VELOCITY)
 RSQ_THRESHOLD    = 0.9999   # R-Squared value for determining waypoints (lower val ∝ less waypoints)
-USE_WAYPOINTS    = False    # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS    = True     # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
-INCREASE_PADDING = 3       # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
+INCREASE_PADDING = 1        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
                             # is applied unless the vehicle is larger than the tile size.
 SHOW_PADDING     = False    # During runtime, pause and show user before and after dilation of image mask (showing obstacle regions with padding)
 
