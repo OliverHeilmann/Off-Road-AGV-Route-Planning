@@ -29,10 +29,10 @@ class LandTypes:
         # return object with properties for passing to tile class later
         return self
 
-    def get_RGB_WeBots( self, maxvel = 30 ):
+    def get_RGB_WeBots( self, maxvel = 30, iop_order = 1 ):
         """Returns the Terrain type, mid colour in RBG and the VRF as dictionary"""
-        return { item[0] : [item[1][0],                                             # RGB list
-                            round(0.5 * maxvel * ( 1 + item[1][-1]), 4) ]           # vehicle velocity
+        return { item[0] : [item[1][0],                                                 # RGB list
+                            round(0.5 * maxvel * ( 1 + item[1][-1] * iop_order), 4) ]   # vehicle velocity
                             for item in self.classes.items() if item[0] != "Slope" }
 
     def get_type_keys( self, drop = None ):

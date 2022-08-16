@@ -46,7 +46,7 @@ from dijkstrasearch import dijkstraRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-VEHICLE = "HUMAN"      #  Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
+VEHICLE = "MOOSE"      #  Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
 
 vehicleInfo = Vehicles( VEHICLE )                  # Get the vehicle information from the class database in vehicles.py
 MAX_SLOPE_ANGLE =  vehicleInfo["max_slope_angle"]  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
@@ -475,7 +475,7 @@ def wbo_vehicle_config( wpts : np.ndarray, trn : Terrain ):
     wpts_string = ",".join([ '{{{},{},{}}}'.format(x,y,z+0.3) for x,y,z in [get_xyz_wb(el, trn) for el in wpts] ])
 
     # Get Terrain Class : [Mid RGB, Velocity] from trn object
-    trnWebots = trn.get_RGB_WeBots( maxvel = MAX_VELOCITY )
+    trnWebots = trn.get_RGB_WeBots( maxvel = MAX_VELOCITY, iop_order = IOP_ORDER )
 
     # Colour of terrain classes – output in the form {terrain_type,r,g,b,vrf},{terrain_type,r,g,b,vrf}...
     # shift Firebreak colour by a number because blacks do not appear as dark with textures in Webots
