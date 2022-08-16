@@ -41,17 +41,18 @@ from maps.landtypes import Tile, LandTypes
 from maps.dem import DEM
 from greedysearch import greedyRoute3D
 from astarsearch import astarRoute3D
+from dijkstrasearch import dijkstraRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
 VEHICLE = "MOOSE"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
-MAX_SLOPE_ANGLE = 0.349066  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
+MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)       -->0.349066
 VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
 VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
 MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Louisiana1'  # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado2'  # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -65,8 +66,8 @@ SAVEMAP = False          # If true then save the output elevation map else, only
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 16   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 128         # The spacing between nodes in x, y dir [meters]
+XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -92,8 +93,8 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (2,10)				# index value which agent starts at after including corner size (row, col)
-END   = (13,12)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (50,320)				# index value which agent starts at after including corner size (row, col)
+END   = (345,220)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # START = (50,320)
                             # Colorado1, Louisiana1 END = (455,420)
                             # Colorado2 END = (345,220)
@@ -621,12 +622,14 @@ if __name__ == '__main__':
         # create empty lists to overwrite if paths are found
         x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
         x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
+        x_rt_dijkstra = y_rt_dijkstra  = dists_dijkstra = elevs_dijkstra = []
 
         # add starting and ending positions now so that they are on map even if
         # no route is found with path planners 
         shift = lambda n : (n*YSPACING) + 1.5*YSPACING
         y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
         y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+        y_wpts_dijkstra , x_wpts_dijkstra   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
 
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
@@ -646,6 +649,13 @@ if __name__ == '__main__':
                                                 goal=END,                       # ending agent position
                                                 gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
 
+        solutionRoute_dijkstraIndex = dijkstraRoute3D(clip(terrain.tiles),            # terrain tile classes 2D array
+                                                maxvelocity=MAX_VELOCITY,       # max vehicle velocity from data sheet in km/h
+                                                maxslope=MAX_SLOPE_ANGLE,       # max permissible slope angles
+                                                start=START,                    # starting agent position
+                                                goal=END,                       # ending agent position
+                                                gridsize=(XSPACING,YSPACING) )  # size of each grid segment in [m]
+
         # if a path exists then continue...
         if solutionRoute_greedyIndex and solutionRoute_astarIndex:
             # shift results to account for lambda border clipping step shown above. Also modify
@@ -653,15 +663,18 @@ if __name__ == '__main__':
             transform_to_webots = lambda the_list : (np.array(the_list) + (CORNER_SIZE-1)) * XSPACING
             solutionRoute_greedy = transform_to_webots( solutionRoute_greedyIndex )
             solutionRoute_astar  = transform_to_webots( solutionRoute_astarIndex  )
+            solutionRoute_dijkstra  = transform_to_webots( solutionRoute_dijkstraIndex  )
 
             # Make set of waypoints for vehicle based on solution
             # Returns as [ (x1,y1), (x2,y2) ... ]
             waypoints_greedy = get_waypoints( route = solutionRoute_greedy )
             waypoints_astar = get_waypoints( route = solutionRoute_astar )
+            waypoints_dijkstra = get_waypoints( route = solutionRoute_dijkstra )
 
             # get elevation data per distance travelled to plot later
             dists_greedy, elevs_greedy = elevation_per_distance(  solutionRoute_greedy, trn = terrain)
             dists_astar, elevs_astar = elevation_per_distance(  solutionRoute_astar, trn = terrain)
+            dists_dijkstra, elevs_dijkstra = elevation_per_distance(  solutionRoute_dijkstra, trn = terrain)
 
             # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
             wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
@@ -674,6 +687,10 @@ if __name__ == '__main__':
 
             x_rt_astar, y_rt_astar = get_xys( solutionRoute_astar )
             x_wpts_astar, y_wpts_astar = get_xys( waypoints_astar )
+
+            x_rt_dijkstra, y_rt_dijkstra = get_xys( solutionRoute_dijkstra )
+            x_wpts_dijkstra, y_wpts_dijkstra = get_xys( waypoints_dijkstra )
+
     except: pass # continue silently after an no route found edge case error...
 
     # Consider end time before plotting
