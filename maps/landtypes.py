@@ -10,30 +10,21 @@ import cv2
 
 class LandTypes:
     """Class to hold land classification and corresponding colour information."""
-    def __init__( self, vehicle = "MOOSE" ):
-        # Define three vehicles for testing purposes, each one will be used in the 
-        # terrain classes dictionary when user specifies...
-        # ------TYPE--------------SEE SELF.CLASSES FOR WHICH VALUE CORRESPONDS TO LIST ELEMENT------
-        vrf = {
-            "MOOSE"          : [0.8,    0.5,    -1.0,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4],
-            "HUMAN"          : [0.3,    0.1,    -1.0,   -0.8,   -0.8,   -0.1,  -0.1, -0.4,    -0.7],
-            "MOTOCROSS BIKE" : [0.8,    0.65,   -1.0,   -0.9,   -1.0,   -0.4,  -0.1, -0.6,    -0.3],
-        }
-
+    def __init__( self, vrf : list = None ):
         # HSV colours and their ranges as [type : [rgb, mid, lower, upper, VRF]]
         # where VRF is the vegetation roughness factor, an indiction of the 
         # velocity a vehicle can pass through the terrain type.
         # ------TYPE--------------RGB------------MID HSV--------LOWER HSV-------UPPER HSV ---------VEHICLE VRF----
         self.classes = {
-            "Firebreak" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40]  , [15, 15, 40]   ,  vrf[vehicle][0]],
-            "Open_Area" : [ [144, 208, 80] , [45, 156, 208] , [30, 141, 168] , [60, 171, 248] ,  vrf[vehicle][1]],
-            "River"     : [ [0, 127, 255]  , [105, 255, 255], [90, 240, 215] , [120, 270, 295],  vrf[vehicle][2]],
-            "Stream"    : [ [117, 255, 223], [83, 137, 255] , [68, 122, 215] , [98, 152, 295] ,  vrf[vehicle][3]],
-            "Swamp"     : [ [237, 124, 49] , [12, 202, 237] , [-3, 187, 197] , [27, 217, 277] ,  vrf[vehicle][4]],
-            "Forest"    : [ [20, 129, 20]  , [60, 215, 129] , [45, 200, 89]  , [75, 230, 169] ,  vrf[vehicle][5]],
-            "Orchard"   : [ [213, 125, 174], [163, 105, 213], [148, 90, 173] , [178, 120, 253],  vrf[vehicle][6]],
-            "Snow"      : [ [255, 255, 255], [0, 0, 255]    , [-15, -15, 215], [15, 15, 295]  ,  vrf[vehicle][7]],
-            "Slope"     : [ [             ], [            ] , [            ] , [            ] ,  vrf[vehicle][8]],
+            "Firebreak" : [ [0, 0, 0]      , [0, 0, 0]      , [-15,-15,-40]  , [15, 15, 40]   ,  vrf[0]],
+            "Open_Area" : [ [144, 208, 80] , [45, 156, 208] , [30, 141, 168] , [60, 171, 248] ,  vrf[1]],
+            "River"     : [ [0, 127, 255]  , [105, 255, 255], [90, 240, 215] , [120, 270, 295],  vrf[2]],
+            "Stream"    : [ [117, 255, 223], [83, 137, 255] , [68, 122, 215] , [98, 152, 295] ,  vrf[3]],
+            "Swamp"     : [ [237, 124, 49] , [12, 202, 237] , [-3, 187, 197] , [27, 217, 277] ,  vrf[4]],
+            "Forest"    : [ [20, 129, 20]  , [60, 215, 129] , [45, 200, 89]  , [75, 230, 169] ,  vrf[5]],
+            "Orchard"   : [ [213, 125, 174], [163, 105, 213], [148, 90, 173] , [178, 120, 253],  vrf[6]],
+            "Snow"      : [ [255, 255, 255], [0, 0, 255]    , [-15, -15, 215], [15, 15, 295]  ,  vrf[7]],
+            "Slope"     : [ [             ], [            ] , [            ] , [            ] ,  vrf[8]],
         }
         # return object with properties for passing to tile class later
         return self

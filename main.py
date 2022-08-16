@@ -37,6 +37,7 @@ import random
 import cv2
 
 from scipy import stats
+from maps.vehicles import Vehicles
 from maps.landtypes import Tile, LandTypes
 from maps.dem import DEM
 from greedysearch import greedyRoute3D
@@ -45,14 +46,16 @@ from dijkstrasearch import dijkstraRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-VEHICLE = "MOOSE"           # Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
-MAX_SLOPE_ANGLE = 0.65      # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)       -->0.349066
-VEHICLE_LENGTH = 2.964      # Vehicle length in meters (2.964 for moose)
-VEHICLE_HEIGHT = 1.145      # Vehicle height in meters (1.145 for moose)
-MAX_VELOCITY = 30.0         # Maximum Vehicle velocity in km/h  (30.0 for moose)
+VEHICLE = "MOTOCROSS BIKE"      #  Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
+
+vehicleInfo = Vehicles( VEHICLE )                  # Get the vehicle information from the class database in vehicles.py
+MAX_SLOPE_ANGLE =  vehicleInfo["max_slope_angle"]  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
+VEHICLE_LENGTH  =  vehicleInfo["length"]           # Vehicle length in meters (2.964 for moose)
+VEHICLE_HEIGHT  =  vehicleInfo["height"]           # Vehicle height in meters (1.145 for moose)
+MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Colorado2'  # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -94,7 +97,7 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
 START = (50,320)				# index value which agent starts at after including corner size (row, col)
-END   = (345,220)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+END   = (455,420)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # START = (50,320)
                             # Colorado1, Louisiana1 END = (455,420)
                             # Colorado2 END = (345,220)
@@ -119,7 +122,7 @@ class Terrain( Tile, LandTypes, DEM ):
     """Terrain class holds all functions relating to terrain generation."""
     def __init__( self, DEMpath : str = None, PNGpath : str = None ):
         # initialise inherited land type class
-        landtypes = LandTypes.__init__( self, vehicle = VEHICLE )
+        landtypes = LandTypes.__init__( self, vrf = vehicleInfo["vrf"] )
 
         # initialise inherited digital elevation map class with location of TIFF file
         if USEDEM:
