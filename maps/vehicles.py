@@ -11,12 +11,12 @@ class Vehicles:
     def __new__( cls, vehicle = "MOOSE" ):
         """Return vehicle data in a dictionary format."""
         # Below information is contained in the below format, units are also defined
-        # "VEHICLE TYPE"     : {    "max_slope_angle" : A [rad], 
-        #                             "length"        : B [m], 
-        #                             "height"        : C [m], 
-        #                             "max_velocity"  : D [km/h],
-        #                             "vrf"           : ["Firebreak","Open_Area","River","Stream","Swamp","Forest","Orchard","Snow","Slope"]
-        #                      },
+        # "VEHICLE TYPE" : { "max_slope_angle" : A [rad], 
+        #                    "length"          : B [m], 
+        #                    "height"          : C [m], 
+        #                    "max_velocity"    : D [km/h],
+        #                    "vrf"             : ["Firebreak","Open_Area","River","Stream","Swamp","Forest","Orchard","Snow","Slope"]
+        #                   },
         modeOfTransport = {
             "MOOSE"          : {    "max_slope_angle" : 0.558505, 
                                     "length" : 2.964, 

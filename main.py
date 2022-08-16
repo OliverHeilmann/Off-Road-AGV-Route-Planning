@@ -46,7 +46,7 @@ from dijkstrasearch import dijkstraRoute3D
 
 ############################## SETUP ###################################
 #### WEBOTS VEHICLE PROPERTIES
-VEHICLE = "MOTOCROSS BIKE"      #  Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
+VEHICLE = "HUMAN"      #  Choose from "MOOSE", "HUMAN" or "MOTOCROSS BIKE"
 
 vehicleInfo = Vehicles( VEHICLE )                  # Get the vehicle information from the class database in vehicles.py
 MAX_SLOPE_ANGLE =  vehicleInfo["max_slope_angle"]  # Maximum permissible slope angle for vehicle in radians (0.65 for Moose)
