@@ -55,7 +55,7 @@ VEHICLE_HEIGHT  =  vehicleInfo["height"]           # Vehicle height in meters (1
 MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado2'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -97,7 +97,7 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
 START = (50,320)				# index value which agent starts at after including corner size (row, col)
-END   = (455,420)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+END   = (345,220)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # START = (50,320)
                             # Colorado1, Louisiana1 END = (455,420)
                             # Colorado2 END = (345,220)
@@ -536,6 +536,10 @@ def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
         z0 = z1
     return dists, elevs
 
+def velocity_per_route( route : list, trn : Terrain ):
+    """Return the iop values at each stage of a route as list."""
+    return [trn.tiles[r][c].velocity for r, c in route]
+
 def apply_padding_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None):
     """Set all obstacle values (including padding from mask) to larger than max slope."""
     for iy, ix in np.ndindex( source.shape ):
@@ -623,9 +627,9 @@ if __name__ == '__main__':
 
     try:
         # create empty lists to overwrite if paths are found
-        x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = []
-        x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = []
-        x_rt_dijkstra = y_rt_dijkstra  = dists_dijkstra = elevs_dijkstra = []
+        x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = velocity_greedy= []
+        x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = velocity_astar = []
+        x_rt_dijkstra = y_rt_dijkstra  = dists_dijkstra = elevs_dijkstra = velocity_dijkstra = []
 
         # add starting and ending positions now so that they are on map even if
         # no route is found with path planners 
@@ -678,6 +682,11 @@ if __name__ == '__main__':
             dists_greedy, elevs_greedy = elevation_per_distance(  solutionRoute_greedy, trn = terrain)
             dists_astar, elevs_astar = elevation_per_distance(  solutionRoute_astar, trn = terrain)
             dists_dijkstra, elevs_dijkstra = elevation_per_distance(  solutionRoute_dijkstra, trn = terrain)
+
+            # get iop data per waypoint travelled to plot later
+            velocity_greedy = velocity_per_route(  solutionRoute_greedyIndex, trn = terrain)
+            velocity_astar = velocity_per_route(  solutionRoute_astarIndex, trn = terrain)
+            velocity_dijkstra = velocity_per_route(  solutionRoute_dijkstraIndex, trn = terrain)
 
             # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
             wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
@@ -818,18 +827,26 @@ if __name__ == '__main__':
         ax4.set_xlabel('X Position [m]'); ax4.set_ylabel('Y Position [m]')
         cbar2.ax.set_ylabel('Vehicle Velocity [km/h]', rotation=270, labelpad=15,)
 
-    ##### ELEVATION OVER DISTANCE OUTPUT #####
-    fig2, (ax5) = plt.subplots(nrows=1, ncols=1, figsize=(9.5,4))
-    ax5.set(title="Elevation Gain Over Distance Travelled")
+    ##### ELEVATION AND IOP OVER DISTANCE OUTPUT #####
+    fig2, (ax5, ax6) = plt.subplots(nrows=2, ncols=1, figsize=(9.5,8.))
+    ax5.set(title="Elevation Change Over Distance Travelled")
     ax5.plot(dists_greedy, elevs_greedy,'g-')
     ax5.plot(dists_astar, elevs_astar,'r-')
     # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
     ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
     ax5.legend(['Greedy', 'A*'])
 
+    ax6.set(title="Passability Change Over Distance Travelled")
+    ax6.plot(dists_greedy, velocity_greedy,'g-')
+    ax6.plot(dists_astar, velocity_astar,'r-') 
+    # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
+    ax6.set_ylabel('Velocity [km/h]'); ax5.set_xlabel('Distance [m]')
+    ax6.legend(['Greedy', 'A*'])
+
     ##### SAVING RESULTANT PLOTS #####
     fig.tight_layout(pad=0.6, w_pad=0.2, h_pad=0.2)
     fig.savefig('results/passability.png')
+    fig2.tight_layout(pad=0.6, w_pad=0.2, h_pad=1.2)
     fig2.savefig('results/elevation_gain.png')
 
     plt.show()
