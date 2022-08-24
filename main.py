@@ -201,7 +201,7 @@ class Terrain( Tile, LandTypes, DEM ):
         # return elevation corners of shape (YDIMENSION, XDIMENSION) i.e. not tiles!
         return self.imgNpy
 
-    def wbo_map( self, elevationCorners : np.ndarray ):
+    def rasterized_wbo( self, elevationCorners : np.ndarray ):
         """Create .wbo WeBots readable terrain map using intensity map 2D numpy array."""
 
         # If USEDEM is true, get DEM heights, else convert passed generated elevation data --> convert into .wbo format
@@ -604,7 +604,7 @@ if __name__ == '__main__':
     # Generate output .wbo file using 2D numpy array
     print("[INFO]: Creating WeBots Map...", end = '')
     start = time.time()
-    terrain.wbo_map( elevationCorners )
+    terrain.rasterized_wbo( elevationCorners )
     print( f" {round((time.time() - start), 2)} s")
 
     # Slope Map generation
