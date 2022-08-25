@@ -80,8 +80,10 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
                                         / maxvelocity
 
     # Calculate g_step, the cost of state transition between two nodes (tiles):
-    #       g_step = dDist / (Vmax * dIOP) 
+    #       g_step = dDist / dVel
     # where:
+    #       Vel = 0.5 * Vmax * ( 1 + (IOP)^n ) --> n = 1, 2, 3,...
+    #       dVel = ( Vprev + Vcurr ) /  2
     #       dIOP = ( IOPprev + IOPcurr ) /  2
     g_step = lambda node : 2 * sqrt(pow( (node.state[0] - node.parent.state[0]) * gridsize[0], 2 ) +            \
                                     pow( (node.state[1] - node.parent.state[1]) * gridsize[1], 2 ) +            \
@@ -113,8 +115,8 @@ def astar_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsize=
         
         for space in [right, left, down, downright, downleft, up, upright, upleft]:
             # check if tile space is in bounds, is an obstacle and if it has already been explored...
-            if 0 <= space[0] < len(maze) and 0 <= space[1] < len(maze[0]):
-                if not maze[space].isobstacle(max_slope=maxslope) and space not in explored:
+            if 0 <= space[0] < len(maze) and 0 <= space[1] < len(maze[0]):   # is in bounds
+                if not maze[space].isobstacle(max_slope=maxslope) and space not in explored:    # is not obstacle and not explored
                     node = Node(state=space, parent=current_node, actual_cost_func=g_step)
                     frontier.push(node)
 
