@@ -75,8 +75,10 @@ def dijkstra_search(maze, maxvelocity, maxslope, start=(0, 0), goal=None, gridsi
     f_n = lambda node : node.path_cost
 
     # Calculate g_step, the cost of state transition between two nodes (tiles):
-    #       g_step = dDist / (Vmax * dIOP) 
+    #       g_step = dDist / dVel
     # where:
+    #       Vel = 0.5 * Vmax * ( 1 + (IOP)^n ) --> n = 1, 2, 3,...
+    #       dVel = ( Vprev + Vcurr ) /  2
     #       dIOP = ( IOPprev + IOPcurr ) /  2
     g_step = lambda node : 2 * sqrt(pow( (node.state[0] - node.parent.state[0]) * gridsize[0], 2 ) +            \
                                     pow( (node.state[1] - node.parent.state[1]) * gridsize[1], 2 ) +            \
