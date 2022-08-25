@@ -372,7 +372,7 @@ boundingObject USE TERRAIN_MAP
             tiles_to_cover = math.ceil( VEHICLE_LENGTH / ((XSPACING+YSPACING)/2.0) ) + INCREASE_PADDING
             if tiles_to_cover > 1.:
                 # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
-                kernel = np.ones((tiles_to_cover,tiles_to_cover), np.uint8)
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(tiles_to_cover, tiles_to_cover))
                 img_dilation = cv2.dilate(slopeNodes, kernel, iterations=1)
 
                 for iy, ix in np.ndindex( img_dilation.shape ):
