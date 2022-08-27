@@ -26,7 +26,7 @@ MAX_DIFF = 0.4        # Max height difference between nodes
 RADIUS = 3          # Radius of cells to average height across (larger == smoother height diffs)
 RESMOOTH = 2        # Number of times the peaks are resmoothed (averaged with neighbours)
 
-GAUSSIAN_PEAKS = 5  # Number of Gaussian peaks to generate
+GAUSSIAN_PEAKS = 2  # Number of Gaussian peaks to generate
 GAUSSIAN_SCALE = 9 # Size of Gaussian scatter (i.e. spread over range +-15)
 #######################################################################
 
@@ -34,14 +34,14 @@ GAUSSIAN_SCALE = 9 # Size of Gaussian scatter (i.e. spread over range +-15)
 def wbo_format( output_string ):
     """Reformat calculated heights into the .wbo file format ready for WeBots."""
     formatted =  """#VRML_OBJ R2022a utf8
-Solid {{
+DEF TERRAIN Solid {{
     translation {} {} {}
     children [
         Shape {{
             appearance PBRAppearance {{
                 roughness {}
             }}
-            geometry ElevationGrid {{
+            geometry DEF TERRAIN_MAP ElevationGrid {{
                 height [{}]
                 xDimension {}
                 yDimension {}
@@ -49,6 +49,7 @@ Solid {{
         }}
     ]
 name "ELE_MOD"
+boundingObject USE TERRAIN_MAP
 }}  """.format( XTRANSLATE,
                 YTRANSLATE,
                 ZTRANSLATE,
@@ -58,7 +59,7 @@ name "ELE_MOD"
                 YDIMENSION,
                 )
 
-    with open('maps/elevationmap_gaussian.wbo', 'w') as f:
+    with open('maps/WEBOTS_elevations.wbo', 'w') as f:
         f.write( formatted )
 
 

@@ -63,7 +63,7 @@ USEDEM = True           # If set to true, real DEM data is used for path plannin
                         # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                         # ESTIMATOR PARAMS' below for more configuration options if this option
                         # is selected.
-SAVEMAP = False          # If true then save the output elevation map else, only use it for path
+SAVEMAP = True          # If true then save the output elevation map else, only use it for path
                         # planning and plotting graphs. If it is not saved, running the WeBots 
                         # application will import the previous elevation map instead. This is 
                         # useful where one wishes to test the accuracy of path planning at differing
