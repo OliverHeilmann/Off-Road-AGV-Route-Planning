@@ -369,7 +369,8 @@ boundingObject USE TERRAIN_MAP
         if OBSTACLE_PADDING:
             # determine kernel size based on vehicle params, if <= 1, skip this step due to
             # tile size being larger than vehicle max length.
-            tiles_to_cover = math.ceil( VEHICLE_LENGTH / ((XSPACING+YSPACING)/2.0) ) + INCREASE_PADDING
+            vehicle_tiles = (math.ceil( VEHICLE_LENGTH / ((XSPACING+YSPACING)/2.0) ))
+            tiles_to_cover =  vehicle_tiles + INCREASE_PADDING
             if tiles_to_cover > 1.:
                 # dilate numpy 2d array by increasing the 1s i.e. obstacles boundaries
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(tiles_to_cover, tiles_to_cover))
