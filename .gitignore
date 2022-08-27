@@ -10,6 +10,7 @@ build
 *.tiff
 resize.py
 results/
+TestSurface.png
 
 # ignore terrain folders
 Colorado*

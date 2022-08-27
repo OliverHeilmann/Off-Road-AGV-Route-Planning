@@ -55,7 +55,7 @@ VEHICLE_HEIGHT  =  vehicleInfo["height"]           # Vehicle height in meters (1
 MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Colorado2'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
