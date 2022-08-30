@@ -32,7 +32,7 @@ class Vehicles:
                                 },
             "MOTOCROSS BIKE" : {    "max_slope_angle" : 0.558505,
                                     "length" : 1.87,
-                                    "height" : 1.04,
+                                    "height" : 1.90,
                                     "max_velocity" : 50.0,
                                     "vrf" : [0.8,    0.65,   -1.0,   -0.9,   -1.0,   -0.4,  -0.1, -0.6,    -0.3],
                                 },
