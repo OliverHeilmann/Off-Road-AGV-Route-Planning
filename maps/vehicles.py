@@ -18,7 +18,10 @@ class Vehicles:
         #                    "vrf"             : ["Firebreak","Open_Area","River","Stream","Swamp","Forest","Orchard","Snow","Slope"]
         #                   },
         modeOfTransport = {
-            "MOOSE"          : {    "max_slope_angle" : 0.558505, 
+            "MOOSE"          : {    "max_slope_angle" : 0.558505,   # 20: 0.349 
+                                                                    # 30: 0.524
+                                                                    # 40: 0.698
+                                                                    # 50: 0.873
                                     "length" : 2.964, 
                                     "height" : 1.145, 
                                     "max_velocity" : 30.0,
