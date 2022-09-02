@@ -165,7 +165,7 @@ def dijkstraRoute3D( terrain, maxvelocity=50, maxslope=100, start=(0,0), goal=No
                                                 gridsize = gridsize)
     endtime = round((time.time() - starttime), 2)
     
-    print("Dijkstra SEARCH:")
+    print("DIJKSTRA'S SEARCH:")
     solution = []
     if final_node is None:
         print("No path exists!\n")
