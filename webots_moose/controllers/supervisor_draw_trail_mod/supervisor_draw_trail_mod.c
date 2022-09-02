@@ -54,8 +54,8 @@ static void create_trail_shape() {
   strcat(trail_string, "DEF TRAIL Shape {\n");
   strcat(trail_string, "  appearance Appearance {\n");
   strcat(trail_string, "    material Material {\n");
-  strcat(trail_string, "      diffuseColor 0 1 0\n");
-  strcat(trail_string, "      emissiveColor 0 1 0\n");
+  strcat(trail_string, "      diffuseColor 0 0 1\n");
+  strcat(trail_string, "      emissiveColor 0 0 1\n");
   strcat(trail_string, "    }\n");
   strcat(trail_string, "  }\n");
   strcat(trail_string, "  geometry DEF TRAIL_LINE_SET IndexedLineSet {\n");
