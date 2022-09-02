@@ -53,9 +53,10 @@ MAX_SLOPE_ANGLE =  vehicleInfo["max_slope_angle"]  # Maximum permissible slope a
 VEHICLE_LENGTH  =  vehicleInfo["length"]           # Vehicle length in meters (2.964 for moose)
 VEHICLE_HEIGHT  =  vehicleInfo["height"]           # Vehicle height in meters (1.145 for moose)
 MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in km/h  (30.0 for moose)
+TERRAIN_TYPE    =  vehicleInfo["terrain_type"]     # Vehicle type from amphibious, land or water
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/WestVirginia1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado3'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -69,9 +70,9 @@ SAVEMAP = False         # If true then save the output elevation map else, only 
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
-XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 2048/XDIMENSION         # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
+XDIMENSION = YDIMENSION = 512          # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
+XSPACING = YSPACING = 2048/XDIMENSION   # The spacing between nodes in x, y dir [meters]
+CORNER_SIZE = 1                         # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
 YTRANSLATE = -YDIMENSION*YSPACING / 2.    # Offset for terrain in y dir
@@ -96,12 +97,13 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (100,180)    			# index value which agent starts at after including corner size (row, col)
-END   = (190, 440)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (67,480)   			# index value which agent starts at after including corner size (row, col)
+END   = (420,465)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # Louisiana1 START(50,320), END(455,420)
                             # Colorado1, Louisiana1 START(50,320), END(455,420)
                             # Colorado2 START(50,320), END(345,220)
                             # WestVirginia1 Start(500, 40), End(230, 500)
+                            # Colorado3 START(), END()
 IOP_ORDER        = 1        # Choose an odd number e.g. [1,3,5,7,9...]. This number changes the order of the equation
                             # i.e. 1 = 1st Order Equation with a linearly changing velocity vs IOP value. 3 = 3rd order
                             # which gives a cubic shape. All have min = (0,-1) and max = (1, MAX_VELOCITY)
@@ -110,7 +112,7 @@ USE_WAYPOINTS    = True     # Option to use fewer waypoints on route to minimise
 SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
-INCREASE_PADDING = 2        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
+INCREASE_PADDING = 1        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
                             # is applied unless the vehicle is larger than the tile size.
 SHOW_PADDING     = False    # During runtime, pause and show user before and after dilation of image mask (showing obstacle regions with padding)
 
@@ -364,7 +366,7 @@ boundingObject USE TERRAIN_MAP
         slopeNodes = np.zeros( self.tiles.shape )
         for iy, ix in np.ndindex( self.tiles.shape ):
             # create mask of passable and impassable areas (0 = passable, 1 = impassable)
-            if self.tiles[ iy, ix ].isobstacle(max_slope = MAX_SLOPE_ANGLE):
+            if self.tiles[ iy, ix ].isobstacle(max_slope = MAX_SLOPE_ANGLE, vehicle_type = TERRAIN_TYPE ):
                 slopeNodes[ iy, ix ] = 1
 
         # user to decide whether padding should be applied

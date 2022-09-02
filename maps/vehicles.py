@@ -18,26 +18,29 @@ class Vehicles:
         #                    "vrf"             : ["Firebreak","Open_Area","River","Stream","Swamp","Forest","Orchard","Snow","Slope"]
         #                   },
         modeOfTransport = {
-            "MOOSE"          : {    "max_slope_angle" : 0.558505,   # 20: 0.349 
+            "MOOSE"          : {    "max_slope_angle" : 0.698,   # 20: 0.349 
                                                                     # 30: 0.524
                                                                     # 40: 0.698
                                                                     # 50: 0.873
                                     "length" : 2.964, 
                                     "height" : 1.145, 
                                     "max_velocity" : 30.0,
-                                    "vrf" : [0.8,    0.5,    -1.0,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4]    # -1
+                                    "vrf" : [0.8,    0.5,    -0.73,   -0.8,   -0.8,   -0.8,  -0.5, -0.2,    -0.4],    # -1
+                                    "terrain_type" : 'amphibious',
                                 },
             "HUMAN"          : {    "max_slope_angle" : 0.785398,
                                     "length" : 0.5,
                                     "height" : 1.83,
                                     "max_velocity" : 9.5,
                                     "vrf" :  [0.3,    0.1,    -1.0,   -0.8,   -0.8,   -0.1,  -0.1, -0.4,    -0.7],
+                                    "terrain_type" : 'land',
                                 },
             "MOTOCROSS BIKE" : {    "max_slope_angle" : 0.558505,
                                     "length" : 1.87,
                                     "height" : 1.90,
                                     "max_velocity" : 50.0,
                                     "vrf" : [0.8,    0.65,   -1.0,   -0.9,   -1.0,   -0.4,  -0.1, -0.6,    -0.3],
+                                    "terrain_type" : 'land',
                                 },
         }
         return modeOfTransport[vehicle]

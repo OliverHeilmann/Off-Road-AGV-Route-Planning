@@ -94,6 +94,8 @@ class Tile:
                 passable = True if self.traitCoverage( "River" ) < 0.5 else False   # if River covers less than 50% of terrain...
             elif vehicle_type == "water":   # cannot travel over land
                 passable = True if self.traitCoverage( "River" ) >= 0.5 else False  # if River covers more than 50% of terrain...
+            elif vehicle_type == "amphibious":   # can travel anywhere
+                passable = True
             return False if max_slope >= self.slope and self.velocity > 0.0 and passable else True # False if NOT an obstacle!
         # if here, return whether tile is an obstacle or not as bool
         return self.obstacle
