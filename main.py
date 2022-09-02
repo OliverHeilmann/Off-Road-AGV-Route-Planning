@@ -55,7 +55,7 @@ VEHICLE_HEIGHT  =  vehicleInfo["height"]           # Vehicle height in meters (1
 MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in km/h  (30.0 for moose)
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Louisiana1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/WestVirginia1'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -63,14 +63,14 @@ USEDEM = True           # If set to true, real DEM data is used for path plannin
                         # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                         # ESTIMATOR PARAMS' below for more configuration options if this option
                         # is selected.
-SAVEMAP = True          # If true then save the output elevation map else, only use it for path
+SAVEMAP = False         # If true then save the output elevation map else, only use it for path
                         # planning and plotting graphs. If it is not saved, running the WeBots 
                         # application will import the previous elevation map instead. This is 
                         # useful where one wishes to test the accuracy of path planning at differing
                         # resolutions while maintaining the same terrain and elevation details.
 
 XDIMENSION = YDIMENSION = 512   # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
-XSPACING = YSPACING = 4         # The spacing between nodes in x, y dir [meters]
+XSPACING = YSPACING = 2048/XDIMENSION         # The spacing between nodes in x, y dir [meters]
 CORNER_SIZE = 1                 # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
@@ -79,7 +79,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 2048             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
+PIXEL_RESOLUTION = 16384             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
 
 INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
@@ -96,11 +96,12 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (50,320)				# index value which agent starts at after including corner size (row, col)
-END   = (345,220)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
-                            # START = (50,320)
-                            # Colorado1, Louisiana1 END = (455,420)
-                            # Colorado2 END = (345,220)
+START = (100,180)    			# index value which agent starts at after including corner size (row, col)
+END   = (190, 440)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+                            # Louisiana1 START(50,320), END(455,420)
+                            # Colorado1, Louisiana1 START(50,320), END(455,420)
+                            # Colorado2 START(50,320), END(345,220)
+                            # WestVirginia1 Start(500, 40), End(230, 500)
 IOP_ORDER        = 1        # Choose an odd number e.g. [1,3,5,7,9...]. This number changes the order of the equation
                             # i.e. 1 = 1st Order Equation with a linearly changing velocity vs IOP value. 3 = 3rd order
                             # which gives a cubic shape. All have min = (0,-1) and max = (1, MAX_VELOCITY)
@@ -109,7 +110,7 @@ USE_WAYPOINTS    = True     # Option to use fewer waypoints on route to minimise
 SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
-INCREASE_PADDING = 1        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
+INCREASE_PADDING = 2        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
                             # is applied unless the vehicle is larger than the tile size.
 SHOW_PADDING     = False    # During runtime, pause and show user before and after dilation of image mask (showing obstacle regions with padding)
 
@@ -348,7 +349,8 @@ boundingObject USE TERRAIN_MAP
             elif tile.iop < -1: tile.iop = -1
 
             # calculate estimated velocity at tile using IOP in km/h
-            tile.velocity = 0.5 * MAX_VELOCITY * ( 1 + (tile.iop)**IOP_ORDER )
+            v = 0.5 * MAX_VELOCITY * ( 1 + (tile.iop)**IOP_ORDER )
+            tile.velocity = v if v <= MAX_VELOCITY else MAX_VELOCITY    # ensure max velocity is vmax
 
         # get all tile velocities and put into list
         iops = [obj.iop for row in self.tiles for obj in row]
@@ -693,6 +695,12 @@ if __name__ == '__main__':
             wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
                                 trn = terrain )
 
+            # # calculate translation values for vehicle (WeBots coordinate system)
+            # tx, ty, tz = get_xyz_wb( waypoints_greedy[0], terrain )
+
+            # # put all waypoints into string and adjust for elevation map offset in WeBots
+            # wpts_string = ",".join([ '{{{},{},{}}}'.format(x,y,z+0.3) for x,y,z in [get_xyz_wb(el, terrain) for el in waypoints_greedy] ])
+
             ############################### CREATE FIGURES BELOW ###############################
             # reformat data to matplotlib readable version
             x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
@@ -837,7 +845,7 @@ if __name__ == '__main__':
     ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
     ax5.legend(['Greedy', 'A*'])
 
-    ax6.set(title="Passability Change Over Distance Travelled")
+    ax6.set(title="Velocity Change Over Distance Travelled")
     ax6.plot(dists_greedy, velocity_greedy,'g-')
     ax6.plot(dists_astar, velocity_astar,'r-') 
     # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
@@ -851,4 +859,4 @@ if __name__ == '__main__':
     fig2.savefig('results/elevation_gain.png')
 
     plt.show()
-    ###################################################
+    ################################################### 
