@@ -97,8 +97,8 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (67,480)   			# index value which agent starts at after including corner size (row, col)
-END   = (420,465)	            # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (134,514)  			# index value which agent starts at after including corner size (row, col)
+END   = (306,436) 	        # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # Louisiana1 START(50,320), END(455,420)
                             # Colorado1, Louisiana1 START(50,320), END(455,420)
                             # Colorado2 START(50,320), END(345,220)

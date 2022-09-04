@@ -36,7 +36,7 @@
 #define MAXIMUM_NUMBER_OF_COORDINATES 8000  // Max size of the history.
 #define DISTANCE_TOLERANCE 6.5  // (default = 1.5)
 // #define MAX_SPEED 7.0   // in radians (default = 7.0): Note that 26 radians with 25" diameter wheels is ~30km/h which is vehicle top speed
-#define TURN_COEFFICIENT 8.0   // (default = 4.0)
+#define TURN_COEFFICIENT 7.0   // (default = 4.0) --> 6.5
 
 // Placeholder globals to update key metrics – will use to print to console
 char TERRAIN [50] = "Open_Area";    // string of terrain type
