@@ -56,7 +56,7 @@ MAX_VELOCITY    =  vehicleInfo["max_velocity"]     # Maximum Vehicle velocity in
 TERRAIN_TYPE    =  vehicleInfo["terrain_type"]     # Vehicle type from amphibious, land or water
 
 #### WEBOTS TERRAIN MAP PARAMS
-FOLDERPATH = 'maps/Colorado3'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
+FOLDERPATH = 'maps/Colorado2'   # path to folder with TIFF and PNG files. Set USEDEM to True if you want
                                 # to use the DEM TIFF file, else set to False to create synthetic elevation
                                 # maps. A path to a valid PNG terrain file is required regardless in order
                                 # to apply a texture to the resultant terrain.
@@ -64,7 +64,7 @@ USEDEM = True           # If set to true, real DEM data is used for path plannin
                         # If false, create random terrain (or user defined), see 'KERNEL DENSITY 
                         # ESTIMATOR PARAMS' below for more configuration options if this option
                         # is selected.
-SAVEMAP = False         # If true then save the output elevation map else, only use it for path
+SAVEMAP = True         # If true then save the output elevation map else, only use it for path
                         # planning and plotting graphs. If it is not saved, running the WeBots 
                         # application will import the previous elevation map instead. This is 
                         # useful where one wishes to test the accuracy of path planning at differing
@@ -72,7 +72,7 @@ SAVEMAP = False         # If true then save the output elevation map else, only 
 
 XDIMENSION = YDIMENSION = 512          # Max number of nodes in x.y dirs (MUST BE A POWER OF 2!)
 XSPACING = YSPACING = 2048/XDIMENSION   # The spacing between nodes in x, y dir [meters]
-CORNER_SIZE = 1                         # Number of corners to ignore for path planning (to not fall off edge of map)
+CORNER_SIZE = 3                         # Number of corners to ignore for path planning (to not fall off edge of map)
 
 XTRANSLATE = -XDIMENSION*XSPACING / 2.    # Offset for terrain in x dir
 YTRANSLATE = -YDIMENSION*YSPACING / 2.    # Offset for terrain in y dir
@@ -80,7 +80,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 16384             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
+PIXEL_RESOLUTION = 1024             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
 
 INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
@@ -95,10 +95,10 @@ x_pts = y_pts = []
 ADD_NOISE = False       # include additional noise?
 SAMPLES = 110           # Number of additional random samples used to generate heat map and terrain profile
 
-#### PATH PLANNING PARAMS
+#### PATH PLANNING PARAMS 
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (134,514)  			# index value which agent starts at after including corner size (row, col)
-END   = (306,436) 	        # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (50,320)  			# index value which agent starts at after including corner size (row, col)
+END   = (345,220) 	        # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # Louisiana1 START(50,320), END(455,420)
                             # Colorado1, Louisiana1 START(50,320), END(455,420)
                             # Colorado2 START(50,320), END(345,220)
@@ -422,11 +422,6 @@ def getFilesFromFolder( path : str = None, tiff : str = None, png : str = None )
          and PNG files. Check that the provided path is a valid directory and that both files
          are contained within it.\n\n""")
 
-def get_xys( route ):
-    xs = [coord[0] + 1.5*XSPACING for coord in route]
-    ys = [coord[1] + 1.5*YSPACING for coord in route]
-    return xs, ys
-
 def get_waypoints( route : np.ndarray ):
     """Create a set of waypoints for vehicle to drive toward in WeBots simulator."""
     wpts = [ (route[0][0], route[0][1]) ]
@@ -457,18 +452,15 @@ def get_waypoints( route : np.ndarray ):
     wpts.append( (x_curr, y_curr) )
     return wpts
 
-def get_wpt_elev( wpt : np.array, terrain : Terrain ):
-    """Get waypoint elevation float value from corresponding tile object."""
-    # note that waypoints are in the form [X, Y] i.e. [Col, Row]! This is opposite to
-    # array lookup notation...
-    c, r = ( np.array(wpt) / ((XSPACING+YSPACING)/2.0) ).astype(int) + CORNER_SIZE
-    return terrain.tiles[r, c].elevation
-
 def get_xyz_wb( wpt : np.array, trn : Terrain, dp = 4 ):
-    webots_coords = lambda n, dn, dw : n + dn + (3*dw)/2
-    x = webots_coords(wpt[0], XTRANSLATE, XSPACING)
-    y = webots_coords(wpt[1], YTRANSLATE, YSPACING)
-    z = round( get_wpt_elev( wpt, trn ) + VEHICLE_HEIGHT/2, dp )
+    """get webots xyz coords from waypoints and terrain tile class info."""
+    x = wpt[0] + XTRANSLATE
+    y = wpt[1] + YTRANSLATE
+    # turn wpt back into index with clipped borders
+    unshift = lambda m : (m/YSPACING) - CORNER_SIZE - 0.5
+    indX = (unshift(wpt[0]) + CORNER_SIZE).astype(int)
+    indY = (unshift(wpt[1]) + CORNER_SIZE).astype(int)
+    z = round( terrain.tiles[indY, indX].elevation + (0.9*VEHICLE_HEIGHT), dp )
     return x, y, z
 
 def wbo_vehicle_config( wpts : np.ndarray, trn : Terrain ):
@@ -522,28 +514,27 @@ Vehicle {{
     except:
         raise ValueError('"maps/WEBOTS_vehicle_config.txt" did not save!')
 
-def elevation_per_distance( wpts : np.ndarray, trn : Terrain ):
+def params_per_distance( indxs : np.ndarray, wpts : np.ndarray, trn : Terrain ):
     """Get the elevation per distance travelled, return as xs and ys lists."""
-    # calculate translation values for vehicle (WeBots coordinate system)
+    # sum displacement values for vehicle journey in meters (using WeBots coordinate system)
     x0, y0, z0 = get_xyz_wb( wpts[0], trn )
     dist = 0.0
-    dists = [0.0]
-    elevs = [z0]
+    distances = [0.0]
     for wpt in wpts[1:]:
         x1, y1, z1 = get_xyz_wb( wpt, trn ) # get new coords
         dist += math.sqrt(  pow( x0 - x1, 2.0 ) + 
                             pow( y0 - y1, 2.0 ) + 
                             pow( z0 - z1, 2.0 ) )
-        dists.append( dist )
-        elevs.append( z1 )
+        distances.append( dist )
         x0 = x1
         y0 = y1
         z0 = z1
-    return dists, elevs
 
-def velocity_per_route( route : list, trn : Terrain ):
-    """Return the iop values at each stage of a route as list."""
-    return [trn.tiles[r][c].velocity for r, c in route]
+    # get associated tile values
+    elevations = [trn.tiles[r + CORNER_SIZE][c + CORNER_SIZE].elevation for c, r in indxs]
+    velocities = [trn.tiles[r + CORNER_SIZE][c + CORNER_SIZE].velocity for c, r in indxs]
+    slopes     = [trn.tiles[r + CORNER_SIZE][c + CORNER_SIZE].slope for c, r in indxs]
+    return distances, elevations, velocities, slopes
 
 def apply_padding_mask( source : np.ndarray,  mask : np.ndarray, min = None, max = None):
     """Set all obstacle values (including padding from mask) to larger than max slope."""
@@ -630,19 +621,20 @@ if __name__ == '__main__':
     padded_obstacle_mask = terrain.pad_obstacles( showDilate = SHOW_PADDING )
     print( f" {round((time.time() - start), 2)} s")
 
+    ################# ROUTE PLANNING BELOW #################
+    # create empty lists to overwrite if paths are found
+    x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = slope_greedy = velocity_greedy= []
+    x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = slope_astar = velocity_astar = []
+    x_rt_dijkstra = y_rt_dijkstra  = dists_dijkstra = elevs_dijkstra = slope_dijkstra = velocity_dijkstra = []
+
+    # add starting and ending positions now so that they are on map even if
+    # no route is found with path planners
+    shift = lambda n : (n + CORNER_SIZE + 0.5) * YSPACING
+    y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+    y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+    y_wpts_dijkstra , x_wpts_dijkstra   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
+
     try:
-        # create empty lists to overwrite if paths are found
-        x_rt_greedy = y_rt_greedy = dists_greedy = elevs_greedy = velocity_greedy= []
-        x_rt_astar = y_rt_astar  = dists_astar = elevs_astar = velocity_astar = []
-        x_rt_dijkstra = y_rt_dijkstra  = dists_dijkstra = elevs_dijkstra = velocity_dijkstra = []
-
-        # add starting and ending positions now so that they are on map even if
-        # no route is found with path planners 
-        shift = lambda n : (n*YSPACING) + 1.5*YSPACING
-        y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
-        y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
-        y_wpts_dijkstra , x_wpts_dijkstra   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
-
         # Get possible route using Greedy search approach as list [(x1,y1), (x2,y2) ...]
         # Don't pass border values as their slopes are not accurate due to kerneling method. 
         # Answers are returned as INDEX VALUES OF THE INPUT ARRAY!
@@ -672,10 +664,9 @@ if __name__ == '__main__':
         if solutionRoute_greedyIndex and solutionRoute_astarIndex:
             # shift results to account for lambda border clipping step shown above. Also modify
             # results to show solution in absolute coordinates rather than index values of the input
-            transform_to_webots = lambda the_list : (np.array(the_list) + (CORNER_SIZE-1)) * XSPACING
-            solutionRoute_greedy = transform_to_webots( solutionRoute_greedyIndex )
-            solutionRoute_astar  = transform_to_webots( solutionRoute_astarIndex  )
-            solutionRoute_dijkstra  = transform_to_webots( solutionRoute_dijkstraIndex  )
+            solutionRoute_greedy   = shift(np.array(solutionRoute_greedyIndex  ))
+            solutionRoute_astar    = shift(np.array(solutionRoute_astarIndex   ))
+            solutionRoute_dijkstra = shift(np.array(solutionRoute_dijkstraIndex))
 
             # Make set of waypoints for vehicle based on solution
             # Returns as [ (x1,y1), (x2,y2) ... ]
@@ -683,28 +674,23 @@ if __name__ == '__main__':
             waypoints_astar = get_waypoints( route = solutionRoute_astar )
             waypoints_dijkstra = get_waypoints( route = solutionRoute_dijkstra )
 
-            # get elevation data per distance travelled to plot later
-            dists_greedy, elevs_greedy = elevation_per_distance(  solutionRoute_greedy, trn = terrain)
-            dists_astar, elevs_astar = elevation_per_distance(  solutionRoute_astar, trn = terrain)
-            dists_dijkstra, elevs_dijkstra = elevation_per_distance(  solutionRoute_dijkstra, trn = terrain)
-
-            # get iop data per waypoint travelled to plot later
-            velocity_greedy = velocity_per_route(  solutionRoute_greedyIndex, trn = terrain)
-            velocity_astar = velocity_per_route(  solutionRoute_astarIndex, trn = terrain)
-            velocity_dijkstra = velocity_per_route(  solutionRoute_dijkstraIndex, trn = terrain)
-
+            # get parameter data per distance travelled to plot later...
+            dists_greedy, elevs_greedy, velocity_greedy, slope_greedy = params_per_distance(solutionRoute_greedyIndex, 
+                                                                                            solutionRoute_greedy,
+                                                                                            trn = terrain)
+            dists_astar, elevs_astar, velocity_astar, slope_astar = params_per_distance(solutionRoute_astarIndex,
+                                                                                        solutionRoute_astar,
+                                                                                        trn = terrain)
+            dists_dijkstra, elevs_dijkstra, velocity_dijkstra, slope_dijkstra = params_per_distance(solutionRoute_dijkstraIndex,
+                                                                                                    solutionRoute_dijkstra,
+                                                                                                    trn = terrain)
             # Save waypoints and starting location for vehicle in config file (readable by Webots C code)
             wbo_vehicle_config( wpts = waypoints_astar if USE_WAYPOINTS else solutionRoute_astar,
                                 trn = terrain )
 
-            # # calculate translation values for vehicle (WeBots coordinate system)
-            # tx, ty, tz = get_xyz_wb( waypoints_greedy[0], terrain )
-
-            # # put all waypoints into string and adjust for elevation map offset in WeBots
-            # wpts_string = ",".join([ '{{{},{},{}}}'.format(x,y,z+0.3) for x,y,z in [get_xyz_wb(el, terrain) for el in waypoints_greedy] ])
-
             ############################### CREATE FIGURES BELOW ###############################
             # reformat data to matplotlib readable version
+            get_xys = lambda l : ([pos[0] for pos in l], [pos[1] for pos in l]) # returns xs, ys
             x_rt_greedy, y_rt_greedy = get_xys( solutionRoute_greedy )
             x_wpts_greedy, y_wpts_greedy = get_xys( waypoints_greedy )
 
@@ -729,12 +715,6 @@ if __name__ == '__main__':
                                                                     MAX_VELOCITY), 
                                                                     fontsize=14)
     
-    # add starting and ending positions now so that they are on map even if
-    # no route is found with path planners 
-    shift = lambda n : (n*YSPACING) + 1.5*YSPACING
-    y_wpts_greedy, x_wpts_greedy  = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
-    y_wpts_astar , x_wpts_astar   = ( (shift(START[0]), shift(END[0])),  (shift(START[1]), shift(END[1])) )
-
     ##### ELEVATION HEATMAP OUTPUT #####
     ax1.set(title="Elevation Heatmap")
     # ax1.plot(x_pts,y_pts,'ro')
@@ -839,20 +819,28 @@ if __name__ == '__main__':
         cbar2.ax.set_ylabel('Vehicle Velocity [km/h]', rotation=270, labelpad=15,)
 
     ##### ELEVATION AND IOP OVER DISTANCE OUTPUT #####
-    fig2, (ax5, ax6) = plt.subplots(nrows=2, ncols=1, figsize=(9.5,8.))
-    ax5.set(title="Elevation Change Over Distance Travelled")
+    fig2, (ax5, ax6, ax7) = plt.subplots(nrows=3, ncols=1, figsize=(9.5,8.))
+    ax5.set(title="Estimated Elevation Over Distance Travelled")
     ax5.plot(dists_greedy, elevs_greedy,'g-')
     ax5.plot(dists_astar, elevs_astar,'r-')
     # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
-    ax5.set_ylabel('Elevation [m]'); ax5.set_xlabel('Distance [m]')
+    ax5.set_ylabel('Elevation [m]')
     ax5.legend(['Greedy', 'A*'])
-
-    ax6.set(title="Velocity Change Over Distance Travelled")
-    ax6.plot(dists_greedy, velocity_greedy,'g-')
-    ax6.plot(dists_astar, velocity_astar,'r-') 
-    # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
-    ax6.set_ylabel('Velocity [km/h]'); ax5.set_xlabel('Distance [m]')
+    
+    ax6.set(title="Estimated Slope Over Distance Travelled")
+    todeg = lambda radlist : 360. * np.array(radlist) / (2*math.pi)  # rad to deg lists
+    ax6.plot(dists_greedy, todeg(slope_greedy),'g-')
+    ax6.plot(dists_astar, todeg(slope_astar),'r-')
+    ax6.set_ylabel('Slope [deg]')
     ax6.legend(['Greedy', 'A*'])
+
+    ax7.set(title="Estimated Velocity Over Distance Travelled")
+    ax7.plot(dists_greedy, velocity_greedy,'g-')
+    ax7.plot(dists_astar, velocity_astar,'r-') 
+    # ax5.axis(   xmin=0, xmax=1600, ymin=300, ymax=600)
+    ax7.set_ylabel('Velocity [km/h]'); 
+    ax7.set_xlabel('Distance [m]')
+    ax7.legend(['Greedy', 'A*'])
 
     ##### SAVING RESULTANT PLOTS #####
     fig.tight_layout(pad=0.6, w_pad=0.2, h_pad=0.2)
