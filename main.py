@@ -80,7 +80,7 @@ ZTRANSLATE = 0                              # Offset for terrain in z dir
 
 APPEARANCE = "TerrainMatte"         # e.g. "SandyGround" with SCALE = 10, e.g. "TerrainSandy" or "TerrainMatte" with SCALE = 1 (see proto files)
 SCALE = 1                           # Scale of appearance image over texture (in WeBots simulator)
-PIXEL_RESOLUTION = 1024             # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
+PIXEL_RESOLUTION = 16384            # Pixel resolution of terrain feature image (MUST BE A POWER OF 2!), images are 16384x16384
 
 INTERP = cv2.INTER_CUBIC            # Method for scaling up/down data (elevation, DEM and slope)
 
@@ -97,8 +97,8 @@ SAMPLES = 110           # Number of additional random samples used to generate h
 
 #### PATH PLANNING PARAMS 
 # note that min index value is 0 and max is "XDIMENSION - corner size"...
-START = (50,320)  			# index value which agent starts at after including corner size (row, col)
-END   = (345,220) 	        # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
+START = (46,315)  			# index value which agent starts at after including corner size (row, col)
+END   = (283,220)	        # index value which agent ends at after including corner size, set to None for ending at top, right corner (row, col)
                             # Louisiana1 START(50,320), END(455,420)
                             # Colorado1, Louisiana1 START(50,320), END(455,420)
                             # Colorado2 START(50,320), END(345,220)
@@ -108,11 +108,11 @@ IOP_ORDER        = 1        # Choose an odd number e.g. [1,3,5,7,9...]. This num
                             # i.e. 1 = 1st Order Equation with a linearly changing velocity vs IOP value. 3 = 3rd order
                             # which gives a cubic shape. All have min = (0,-1) and max = (1, MAX_VELOCITY)
 RSQ_THRESHOLD    = 0.9999   # R-Squared value for determining waypoints (lower val ∝ less waypoints)
-USE_WAYPOINTS    = True     # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
+USE_WAYPOINTS    = False     # Option to use fewer waypoints on route to minimise route complexity (blue dots on plots)
 SHOW_WAYPOINTS   = False    # Show vehicle waypoints which will be used in Webots simulator?
 
 OBSTACLE_PADDING = True     # If true, use padding if vehicle is larger than tile size, else, no padding necessary
-INCREASE_PADDING = 1        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
+INCREASE_PADDING = 2        # Increase kernel dilate size by X e.g. X=1, kernel = [n+1, m+1]... If == 0, no padding
                             # is applied unless the vehicle is larger than the tile size.
 SHOW_PADDING     = False    # During runtime, pause and show user before and after dilation of image mask (showing obstacle regions with padding)
 
@@ -475,11 +475,11 @@ def wbo_vehicle_config( wpts : np.ndarray, trn : Terrain ):
     trnWebots = trn.get_RGB_WeBots( maxvel = MAX_VELOCITY, iop_order = IOP_ORDER )
 
     # Colour of terrain classes – output in the form {terrain_type,r,g,b,vrf},{terrain_type,r,g,b,vrf}...
-    # shift Firebreak colour by a number because blacks do not appear as dark with textures in Webots
+    # shift Road colour by a number because blacks do not appear as dark with textures in Webots
     classes_str = ",".join( ["{{{},{},{},{},{}}}".format(   i[0],                                       # terrain class
-                                                            i[1][0][0] if i[0] != 'Firebreak' else 50,  # red
-                                                            i[1][0][1] if i[0] != 'Firebreak' else 50,  # green
-                                                            i[1][0][2] if i[0] != 'Firebreak' else 50,  # blue
+                                                            i[1][0][0] if i[0] != 'Road' else 50,  # red
+                                                            i[1][0][1] if i[0] != 'Road' else 50,  # green
+                                                            i[1][0][2] if i[0] != 'Road' else 50,  # blue
                                                             i[1][-1])                                   # vehicle velocity
                             for i in trnWebots.items()] )
 

@@ -91,7 +91,7 @@ DEF MOOSE Moose {
   controller "moose_path_following_mod"
   bodySlot [
     Camera {
-      translation 0 0 -0.7
+      translation 0 0 -0.48
       rotation 0 1 0 1.57
       name "cameraDown"
       fieldOfView 0.7
